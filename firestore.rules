@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /reservations/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+    match /settings/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+  }
+}

@@ -1,0 +1,593 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamkeen Expo 2026 — Interactive Floor Plan</title>
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES
+       Scale: 1m = 40px. Edit --S to resize everything uniformly.
+       ============================================================ */
+    :root {
+      --S: 40;
+      --m: calc(var(--S) * 1px);
+
+      /* Hall */
+      --hall-w: calc(11 * var(--m));
+      --hall-h: calc(18 * var(--m));
+      --wall-border: 10px;
+
+      /* Stand sizes */
+      --ex-w: calc(2   * var(--m));  /* Exhibitor: 80px  */
+      --ex-h: calc(2.5 * var(--m));  /* Exhibitor: 100px */
+      --sp-w: calc(4   * var(--m));  /* Sponsor:  160px  */
+      --sp-h: calc(2.5 * var(--m));  /* Sponsor:  100px  */
+
+      /* Width grid px from left edge */
+      --x-lw:   0px;
+      --x-la:   calc(2   * var(--m));
+      --x-ci:   calc(3.5 * var(--m));
+      --x-ci-r: calc(5.5 * var(--m));
+      --x-ra:   calc(7.5 * var(--m));
+      --x-rw:   calc(9   * var(--m));
+
+      /* Colors */
+      --gold:        #d4af37;
+      --gold-light:  #f5e17a;
+      --gold-dark:   #b8960c;
+      --silver:      #94a3b8;
+      --silver-light:#cdd5e0;
+      --silver-dark: #64748b;
+      --navy:        #1e293b;
+      --navy-light:  #334155;
+      --bg-page:     #f0f4f8;
+      --bg-hall:     #f8fafc;
+      --grid-minor:  rgba(148,163,184,0.18);
+      --grid-major:  rgba(148,163,184,0.40);
+      --stage-bg:    #1e293b;
+      --seating-bg:  #e2e8f0;
+      --green:       #22c55e;
+      --gap:         calc(3.5 * var(--m));
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-page);
+      color: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 24px 40px;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    .expo-header { text-align: center; margin-bottom: 28px; }
+    .expo-header h1 {
+      font-size: 2rem; font-weight: 900;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--navy);
+    }
+    .expo-header h1 em { color: var(--gold); font-style: normal; }
+    .expo-header p {
+      margin-top: 4px; font-size: 0.78rem;
+      letter-spacing: 1.5px; color: var(--silver-dark); text-transform: uppercase;
+    }
+
+    /* EXPO WRAPPER */
+    .expo-wrapper {
+      display: flex; align-items: flex-start;
+      justify-content: center; gap: var(--gap);
+    }
+
+    /* HALL */
+    .hall {
+      position: relative;
+      width: var(--hall-w); height: var(--hall-h);
+      background-color: var(--bg-hall);
+      background-image:
+        linear-gradient(to right,  var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to right,  var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+      background-size:
+        calc(1*var(--m)) calc(1*var(--m)),
+        calc(1*var(--m)) calc(1*var(--m)),
+        calc(5*var(--m)) calc(5*var(--m)),
+        calc(5*var(--m)) calc(5*var(--m));
+      border: var(--wall-border) solid var(--navy);
+      box-shadow: 0 8px 40px rgba(30,41,59,0.18);
+      overflow: visible;
+    }
+    .hall-name {
+      position: absolute; bottom: calc(-1.6*var(--m));
+      left: 50%; transform: translateX(-50%);
+      font-size: 0.82rem; font-weight: 800; letter-spacing: 3px;
+      color: var(--navy); text-transform: uppercase; white-space: nowrap;
+    }
+
+    /* DIMENSION TICKS */
+    .dim {
+      position: absolute; font-size: 0.6rem; font-weight: 700;
+      color: var(--green); letter-spacing: 1px;
+      font-family: 'Consolas', monospace; pointer-events: none; z-index: 20;
+    }
+    .dim-top  { top: -22px; left: 50%; transform: translateX(-50%); }
+    .dim-left { left: -38px; top: 50%; transform: translateY(-50%) rotate(-90deg); white-space: nowrap; }
+    .dim-right{ right: -38px; top: 50%; transform: translateY(-50%) rotate(90deg); white-space: nowrap; }
+
+    /* AISLE TINTS */
+    .aisle {
+      position: absolute; top: 0; height: 100%;
+      background: rgba(148,163,184,0.06);
+      border-left:  1px dashed rgba(148,163,184,0.28);
+      border-right: 1px dashed rgba(148,163,184,0.28);
+      pointer-events: none; z-index: 0;
+    }
+    .aisle-left  { left: calc(2*var(--m));   width: calc(1.5*var(--m)); }
+    .aisle-right { left: calc(7.5*var(--m)); width: calc(1.5*var(--m)); }
+
+    /* STANDS */
+    .stand {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 4px; cursor: pointer; z-index: 2;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      transform-origin: center; user-select: none;
+    }
+    .stand:hover {
+      transform: scale(1.07); filter: brightness(1.14);
+      box-shadow: 0 6px 22px rgba(30,41,59,0.38) !important; z-index: 15;
+    }
+    .stand .s-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;
+      color: var(--navy); pointer-events: none; line-height: 1; margin-top: 0;
+    }
+
+    .stand.exhibitor {
+      background: linear-gradient(160deg, var(--silver-light) 0%, var(--silver) 55%, var(--silver-dark) 100%);
+      border: 1.5px solid var(--silver-dark);
+      box-shadow: 0 2px 8px rgba(100,116,139,0.22);
+    }
+    .stand.sponsor {
+      background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 55%, var(--gold-dark) 100%);
+      border: 1.5px solid var(--gold-dark);
+      box-shadow: 0 2px 10px rgba(212,175,55,0.30);
+    }
+
+    /* DOOR BREAK + ARCS */
+    .door-break {
+      position: absolute; background: var(--bg-page); z-index: 6; pointer-events: none;
+    }
+    .door-arc {
+      position: absolute; border: 1.5px dashed rgba(30,41,59,0.28);
+      pointer-events: none; z-index: 3;
+    }
+    .door-label {
+      position: absolute; font-size: 0.46rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--silver-dark); pointer-events: none; z-index: 7; white-space: nowrap;
+    }
+
+    /* Right Hall door — Left wall, y=300–420 */
+    .rh-door-break { left: calc(-1*var(--wall-border) - 1px); top: 300px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .rh-door-label { left: -38px; top: 354px; transform: rotate(-90deg); }
+    .rh-arc-top    { left: 0; top: 300px; width: 60px; height: 60px; border-top: none; border-left: none; border-bottom-right-radius: 60px; }
+    .rh-arc-bot    { left: 0; top: 360px; width: 60px; height: 60px; border-bottom: none; border-left: none; border-top-right-radius: 60px; }
+
+    /* Left Hall door — Right wall, y=500–620 */
+    .lh-door-break { right: calc(-1*var(--wall-border) - 1px); top: 500px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .lh-door-label { right: -38px; top: 554px; transform: rotate(90deg); }
+    .lh-arc-top    { right: 0; top: 500px; width: 60px; height: 60px; border-top: none; border-right: none; border-bottom-left-radius: 60px; }
+    .lh-arc-bot    { right: 0; top: 560px; width: 60px; height: 60px; border-bottom: none; border-right: none; border-top-left-radius: 60px; }
+
+    /* CONFERENCE ZONE A */
+    .conf-space {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: calc(6*var(--m));
+      background: var(--seating-bg);
+      border-bottom: 2px dashed var(--silver);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+      color: var(--navy-light); text-align: center; line-height: 1.6;
+      z-index: 2; pointer-events: none;
+    }
+
+    .zone-sep {
+      position: absolute; left: 0; top: calc(6*var(--m));
+      width: 100%; height: calc(1*var(--m));
+      border-top: 2px dashed var(--silver); border-bottom: 2px dashed var(--silver);
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; z-index: 1;
+    }
+    .zone-sep::after {
+      content: '— 1m BUFFER ZONE —';
+      font-size: 0.45rem; font-weight: 700; letter-spacing: 3px; color: var(--silver-dark);
+    }
+
+    .zone-tag {
+      position: absolute; right: calc(0.3*var(--m));
+      font-size: 0.48rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: rgba(100,116,139,0.7);
+      pointer-events: none; z-index: 20;
+    }
+
+    /* HALLWAY */
+    .hallway {
+      position: relative;
+      height: calc(var(--hall-h) + 2*var(--wall-border));
+      width: var(--gap);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; padding-bottom: calc(1*var(--m));
+    }
+    .hallway-floor {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent calc(var(--m) - 1px),
+        rgba(148,163,184,0.08) calc(var(--m) - 1px), rgba(148,163,184,0.08) var(--m)
+      );
+      border-left:  2px dashed rgba(148,163,184,0.28);
+      border-right: 2px dashed rgba(148,163,184,0.28);
+    }
+    .hallway-cl {
+      position: absolute; inset: 0; left: 50%; width: 2px;
+      background: repeating-linear-gradient(180deg,
+        var(--silver-dark) 0, var(--silver-dark) 8px, transparent 8px, transparent 18px);
+      opacity: 0.22;
+    }
+    .h-conn {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: repeating-linear-gradient(90deg,
+        rgba(30,41,59,0.22) 0, rgba(30,41,59,0.22) 6px, transparent 6px, transparent 12px);
+    }
+    .h-conn-rh { top: 360px; }
+    .h-conn-lh { top: 560px; }
+    .entrance {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .entrance-arch {
+      width: 80px; height: 40px;
+      border: 2px dashed rgba(30,41,59,0.28); border-bottom: none;
+      border-radius: 50px 50px 0 0; margin-bottom: 5px;
+    }
+    .entrance-label {
+      font-size: 0.55rem; font-weight: 800;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--navy);
+    }
+
+    /* TOOLTIP */
+    #tooltip {
+      position: fixed; pointer-events: none; z-index: 9999;
+      padding: 10px 16px; background: var(--navy); color: #fff;
+      border-radius: 8px; font-size: 0.8rem; line-height: 1.55;
+      box-shadow: 0 8px 28px rgba(30,41,59,0.38);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease; white-space: nowrap;
+    }
+    #tooltip.show { opacity: 1; visibility: visible; }
+    #tooltip .tt-head { font-weight: 700; font-size: 0.83rem; }
+    #tooltip .tt-sub  { color: #cbd5e1; font-size: 0.75rem; margin-top: 2px; }
+
+    /* LEGEND */
+    .legend {
+      margin-top: 28px; background: #fff; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 12px 24px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 20px;
+      box-shadow: 0 2px 8px rgba(30,41,59,0.07);
+    }
+    .legend-title { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--navy); }
+    .legend-item  { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--navy-light); }
+    .lg-sw { width: 26px; height: 15px; border-radius: 3px; flex-shrink: 0; }
+    .lg-gold    { background: linear-gradient(135deg,var(--gold-light),var(--gold-dark)); border:1px solid var(--gold-dark); }
+    .lg-silver  { background: linear-gradient(135deg,var(--silver-light),var(--silver-dark)); border:1px solid var(--silver-dark); }
+    .lg-conf    { background: var(--seating-bg); border:1px dashed var(--silver); }
+
+    /* ===== RESPONSIVE ===== */
+
+    /* Tablet (768px – 1100px): tighten padding & header */
+    @media (max-width: 1100px) {
+      body { padding: 16px 16px 32px; }
+      .expo-header h1 { font-size: 1.6rem; letter-spacing: 2px; }
+    }
+
+    /* Mobile (<768px): stack halls vertically, then JS scales to fit */
+    @media (max-width: 767px) {
+      body { padding: 12px 8px 24px; }
+      .expo-header h1 { font-size: 1.1rem; letter-spacing: 1px; }
+      .expo-header p  { font-size: 0.62rem; letter-spacing: 1px; }
+
+      .expo-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+      }
+
+      /* Thin horizontal divider between stacked halls */
+      .hallway {
+        width: var(--hall-w);
+        height: 56px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      .hallway-floor,
+      .hallway-cl,
+      .h-conn { display: none; }
+
+      /* Rotate entrance arch to look like a side door */
+      .entrance { flex-direction: row; align-items: center; gap: 8px; }
+      .entrance-arch {
+        width: 36px; height: 18px;
+        margin-bottom: 0;
+        border-radius: 36px 36px 0 0;
+        transform: rotate(-90deg);
+      }
+
+      /* Stack legend items */
+      .legend {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 14px;
+        gap: 10px;
+        width: 100%;
+        max-width: var(--hall-w);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="expo-header">
+    <h1><em>Tamkeen</em> Expo 2026</h1>
+    <p>Plan d'Exposition Interactif | المخطط التفاعلي للمعرض</p>
+  </header>
+
+  <div class="expo-wrapper">
+
+    <!-- ======================================================
+         LEFT HALL — 11m x 18m
+         Zone A: Conference  y=0–240px  (0–6m)
+         Buffer: y=240–280px (6–7m)
+         Zone B: Exhibition  y=280–720px (7–18m)
+
+         WIDTH GRID (px):
+           Left Wall   x=0,   w=80
+           Left Aisle  x=80,  w=60  (open)
+           Center Isle x=140, w=160
+             Left half  x=140, w=80
+             Right half x=220, w=80
+           Right Aisle x=300, w=60  (open)
+           Right Wall  x=360, w=80
+
+         ZONE B STANDS (h=100px each):
+           Left Wall:   y=280,380,480,580   (4 stands, 400px, 40px gap at bottom)
+           Right Wall:  Door y=380-500.
+                        Stand y=280 (above door)
+                        Stand y=500 (below door)
+                        Stand y=620 (bottom corner)
+           Center Isle:
+             Top Sponsor cap:  x=140 y=280 w=160 h=100
+             Mid left  half:   x=140 y=380,480 w=80 h=100
+             Mid right half:   x=220 y=380,480 w=80 h=100
+             Bot Sponsor cap:  x=140 y=620 w=160 h=100
+         Door: Right wall y=380-500 (3m=120px)
+    ====================================================== -->
+    <div class="hall" id="leftHall">
+      <span class="dim dim-top">11m</span>
+      <span class="dim dim-left">18m</span>
+      <span class="zone-tag" style="top:10px;">Zone A : Conférence | منطقة المؤتمرات</span>
+      <span class="zone-tag" style="top:255px;">Zone B : Exposition | منطقة المعرض</span>
+
+      <div class="aisle aisle-left"></div>
+      <div class="aisle aisle-right"></div>
+
+      <!-- Zone A -->
+      <div class="conf-space">ESPACE CONFÉRENCE<br>مساحة المؤتمرات</div>
+      <!-- Zone B — Left Wall (U-shape: starts y=260, stops y=560) -->
+      <div class="stand exhibitor" style="left:0px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="A1"><span class="s-label">A1</span></div>
+      <div class="stand exhibitor" style="left:0px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="A2"><span class="s-label">A2</span></div>
+      <div class="stand exhibitor" style="left:0px;top:460px;width:80px;height:100px;" data-type="exhibitor" data-id="A3"><span class="s-label">A3</span></div>
+
+      <!-- Zone B — Center Island (1 middle row, 60px bottom aisle) -->
+      <div class="stand sponsor"   style="left:140px;top:260px;width:160px;height:100px;" data-type="sponsor" data-id="S1"><span class="s-label">S1</span></div>
+      <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;"  data-type="exhibitor" data-id="A4"><span class="s-label">A4</span></div>
+      <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;"  data-type="exhibitor" data-id="A5"><span class="s-label">A5</span></div>
+      <div class="stand sponsor"   style="left:140px;top:460px;width:160px;height:100px;" data-type="sponsor" data-id="S2"><span class="s-label">S2</span></div>
+
+      <!-- Zone B — Right Wall (2 above door + 1 below) -->
+      <div class="stand exhibitor" style="left:360px;top:300px;width:80px;height:100px;" data-type="exhibitor" data-id="A6"><span class="s-label">A6</span></div>
+      <div class="stand exhibitor" style="left:360px;top:400px;width:80px;height:100px;" data-type="exhibitor" data-id="A7"><span class="s-label">A7</span></div>
+      <!-- DOOR GAP y=500–620 -->
+      <div class="stand exhibitor" style="left:340px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="A8"><span class="s-label">A8</span></div>
+
+      <!-- Zone B — Bottom Wall (3 exhibitors, bottom-left corner empty) -->
+      <div class="stand exhibitor" style="left:100px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="A9"><span class="s-label">A9</span></div>
+      <div class="stand exhibitor" style="left:180px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="A10"><span class="s-label">A10</span></div>
+      <div class="stand exhibitor" style="left:260px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="A11"><span class="s-label">A11</span></div>
+
+      <!-- Door indicators -->
+      <div class="door-break lh-door-break"></div>
+      <span class="door-label lh-door-label">PORTE | باب</span>
+      <div class="door-arc lh-arc-top"></div>
+      <div class="door-arc lh-arc-bot"></div>
+
+      <span class="hall-name">HALL GAUCHE | القاعة اليسرى</span>
+    </div>
+
+    <!-- ======================================================
+         HALLWAY — 3.5m visual gap
+    ====================================================== -->
+    <div class="hallway">
+      <div class="hallway-floor"></div>
+      <div class="hallway-cl"></div>
+      <div class="h-conn h-conn-rh"></div>
+      <div class="h-conn h-conn-lh"></div>
+      <div class="entrance">
+        <div class="entrance-arch"></div>
+        <span class="entrance-label">ENTRÉE | المدخل</span>
+      </div>
+    </div>
+
+    <!-- ======================================================
+         RIGHT HALL — 11m x 18m — Full Exhibition
+         Door: Left wall y=300–420 (3m=120px, centered in 18m)
+
+         WIDTH GRID (same as Left Hall):
+           Left Wall   x=0,   w=80
+           Left Aisle  x=80,  w=60  (open)
+           Center Isle x=140, w=160
+             Left half  x=140, w=80
+             Right half x=220, w=80
+           Right Aisle x=300, w=60  (open)
+           Right Wall  x=360, w=80
+
+         STANDS (h=100px each):
+           Left Wall:  3 above door  y=0,100,200
+                       Door gap      y=300–420
+                       3 below door  y=420,520,620
+           Center Isle (SOLID — no horizontal gap):
+             Top Sponsor cap:  x=140 y=0   w=160 h=100
+             Left half:  x=140 y=100,200,300,400,500 w=80 h=100 (5 stands)
+             Right half: x=220 y=100,200,300,400,500 w=80 h=100 (5 stands)
+             20px padding (y=600–620)
+             Bot Sponsor cap:  x=140 y=620 w=160 h=100
+           Right Wall: 7 stands (no door) y=0,100,200,300,400,500,600
+    ====================================================== -->
+    <div class="hall" id="rightHall">
+      <span class="dim dim-top">11m</span>
+      <span class="dim dim-right">18m</span>
+
+      <div class="aisle aisle-left"></div>
+      <div class="aisle aisle-right"></div>
+
+      <!-- Top Wall: 3 exhibitors (corners empty) -->
+      <div class="stand exhibitor" style="left:100px;top:0px;width:80px;height:100px;" data-type="exhibitor" data-id="B1"><span class="s-label">B1</span></div>
+      <div class="stand exhibitor" style="left:180px;top:0px;width:80px;height:100px;" data-type="exhibitor" data-id="B2"><span class="s-label">B2</span></div>
+      <div class="stand exhibitor" style="left:260px;top:0px;width:80px;height:100px;" data-type="exhibitor" data-id="B3"><span class="s-label">B3</span></div>
+
+      <!-- Left Wall: 2 above + 2 below door -->
+      <div class="stand exhibitor" style="left:0px;top:100px;width:80px;height:100px;" data-type="exhibitor" data-id="B4"><span class="s-label">B4</span></div>
+      <div class="stand exhibitor" style="left:0px;top:200px;width:80px;height:100px;" data-type="exhibitor" data-id="B5"><span class="s-label">B5</span></div>
+      <!-- DOOR GAP y=300–420 -->
+      <div class="stand exhibitor" style="left:0px;top:420px;width:80px;height:100px;" data-type="exhibitor" data-id="B6"><span class="s-label">B6</span></div>
+      <div class="stand exhibitor" style="left:0px;top:520px;width:80px;height:100px;" data-type="exhibitor" data-id="B7"><span class="s-label">B7</span></div>
+
+      <!-- Center Island: Top Sponsor Cap -->
+      <div class="stand sponsor" style="left:140px;top:160px;width:160px;height:100px;" data-type="sponsor" data-id="S3"><span class="s-label">S3</span></div>
+
+      <!-- Center Island: 2 rows of back-to-back exhibitors -->
+      <div class="stand exhibitor" style="left:140px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B8"><span class="s-label">B8</span></div>
+      <div class="stand exhibitor" style="left:220px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B9"><span class="s-label">B9</span></div>
+      <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="B10"><span class="s-label">B10</span></div>
+      <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="B11"><span class="s-label">B11</span></div>
+
+      <!-- Center Island: Bottom Sponsor Cap -->
+      <div class="stand sponsor" style="left:140px;top:460px;width:160px;height:100px;" data-type="sponsor" data-id="S4"><span class="s-label">S4</span></div>
+
+      <!-- Right Wall: 5 stands (no door) -->
+      <div class="stand exhibitor" style="left:360px;top:110px;width:80px;height:100px;" data-type="exhibitor" data-id="B12"><span class="s-label">B12</span></div>
+      <div class="stand exhibitor" style="left:360px;top:210px;width:80px;height:100px;" data-type="exhibitor" data-id="B13"><span class="s-label">B13</span></div>
+      <div class="stand exhibitor" style="left:360px;top:310px;width:80px;height:100px;" data-type="exhibitor" data-id="B14"><span class="s-label">B14</span></div>
+      <div class="stand exhibitor" style="left:360px;top:410px;width:80px;height:100px;" data-type="exhibitor" data-id="B15"><span class="s-label">B15</span></div>
+      <div class="stand exhibitor" style="left:360px;top:510px;width:80px;height:100px;" data-type="exhibitor" data-id="B16"><span class="s-label">B16</span></div>
+
+      <!-- Bottom Wall: 3 exhibitors (corners empty) -->
+      <div class="stand exhibitor" style="left:100px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="B17"><span class="s-label">B17</span></div>
+      <div class="stand exhibitor" style="left:180px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="B18"><span class="s-label">B18</span></div>
+      <div class="stand exhibitor" style="left:260px;top:620px;width:80px;height:100px;" data-type="exhibitor" data-id="B19"><span class="s-label">B19</span></div>
+
+      <!-- Door indicators -->
+      <div class="door-break rh-door-break"></div>
+      <span class="door-label rh-door-label">PORTE | باب</span>
+      <div class="door-arc rh-arc-top"></div>
+      <div class="door-arc rh-arc-bot"></div>
+
+      <span class="hall-name">HALL DROIT | القاعة اليمنى</span>
+    </div>
+
+  </div><!-- /.expo-wrapper -->
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <span class="legend-title">Légende | مفتاح المخطط</span>
+    <div class="legend-item"><div class="lg-sw lg-gold"></div>Sponsor (Officiel / Standard) | راعي — 10 m²</div>
+    <div class="legend-item"><div class="lg-sw lg-silver"></div>Exposant | عارض — 5 m²</div>
+    <div class="legend-item"><div class="lg-sw lg-conf"></div>Espace Conférence | مساحة المؤتمرات</div>
+  </div>
+
+  <!-- TOOLTIP -->
+  <div id="tooltip"><div class="tt-head"></div><div class="tt-sub"></div></div>
+
+  <!-- Responsive scale: shrinks .expo-wrapper to fit any viewport -->
+  <script>
+    (function () {
+      function applyScale() {
+        var wrapper = document.querySelector('.expo-wrapper');
+        // Reset previous scale so we can measure the true scrollWidth
+        wrapper.style.transform    = '';
+        wrapper.style.marginBottom = '';
+
+        var cs  = getComputedStyle(document.body);
+        var pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        var available = window.innerWidth - pad;
+        var naturalW  = wrapper.scrollWidth;
+
+        if (naturalW > available) {
+          var scale = available / naturalW;
+          wrapper.style.transform       = 'scale(' + scale.toFixed(4) + ')';
+          wrapper.style.transformOrigin = 'top center';
+          // Pull following content up by the height that was "lost" to scaling
+          wrapper.style.marginBottom = Math.round(wrapper.offsetHeight * (scale - 1)) + 'px';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', applyScale);
+      window.addEventListener('resize', applyScale);
+    })();
+  </script>
+
+  <script>
+    (() => {
+      'use strict';
+      const tooltip = document.getElementById('tooltip');
+      const ttHead  = tooltip.querySelector('.tt-head');
+      const ttSub   = tooltip.querySelector('.tt-sub');
+      const OFFSET  = 18;
+
+      const DATA = {
+        sponsor:   { head: 'Sponsor (Officiel / Standard) | راعي', sub: '10 m² (4×2.5m)' },
+        exhibitor: { head: 'Exposant | عارض',                       sub: '5 m² (2×2.5m)'  }
+      };
+
+      document.addEventListener('mousemove', (e) => {
+        if (!tooltip.classList.contains('show')) return;
+        let x = e.clientX + OFFSET, y = e.clientY + OFFSET;
+        const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+        if (x + w > window.innerWidth  - 10) x = e.clientX - w - OFFSET;
+        if (y + h > window.innerHeight - 10) y = e.clientY - h - OFFSET;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top  = y + 'px';
+      });
+
+      document.querySelectorAll('.stand').forEach((stand) => {
+        stand.addEventListener('mouseenter', (e) => {
+          const d = DATA[stand.dataset.type] || DATA.exhibitor;
+          ttHead.textContent = `${d.head}  [Stand: ${stand.dataset.id || ''}]`;
+          ttSub.textContent  = d.sub;
+          tooltip.style.left = (e.clientX + OFFSET) + 'px';
+          tooltip.style.top  = (e.clientY + OFFSET) + 'px';
+          tooltip.classList.add('show');
+        });
+        stand.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+      });
+    })();
+  </script>
+
+</body>
+</html>

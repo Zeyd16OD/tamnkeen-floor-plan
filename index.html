@@ -1,0 +1,1380 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1400">
+  <title>Tamkeen Expo 2026 — حجز الأجنحة والرعاية</title>
+  <!--
+    ╔═══════════════════════════════════════════════════════════╗
+    ║   FIREBASE SETUP INSTRUCTIONS                            ║
+    ║                                                          ║
+    ║   1. Go to https://console.firebase.google.com           ║
+    ║   2. Create a new project (e.g. "tamkeen-expo")          ║
+    ║   3. Go to Firestore Database → Create Database           ║
+    ║      - Choose "Start in test mode"                       ║
+    ║      - Pick region: europe-west1 (or closest)            ║
+    ║   4. Go to Project Settings → General → Your apps        ║
+    ║      - Click "Web" (</>)                                 ║
+    ║      - Register app                                      ║
+    ║      - Copy the firebaseConfig object                    ║
+    ║   5. Paste your config values below in the JS section    ║
+    ║      (search for "PASTE YOUR FIREBASE CONFIG HERE")      ║
+    ║                                                          ║
+    ║   Admin password (change below): tamkeen2026             ║
+    ╚═══════════════════════════════════════════════════════════╝
+  -->
+  <style>
+    /* ============================================================
+       GLOBAL VARIABLES & RESET
+       ============================================================ */
+    :root {
+      --primary-dark: #1e293b;
+      --gold-premium: #b8960c;
+      --gold-header: #d4af37;
+      --gold-light-bg: #fef9c3;
+      --silver-standard: #64748b;
+      --silver-header: #94a3b8;
+      --bg-color: #f8fafc;
+      --text-main: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --white: #ffffff;
+      --pending-color: #f59e0b;
+      --pending-light: #fef3c7;
+      --reserved-color: #ef4444;
+      --reserved-light: #fee2e2;
+      --available-color: #22c55e;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0; padding: 0;
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    /* ============================================================
+       FIREBASE WARNING BANNER
+       ============================================================ */
+    #firebase-warning {
+      display: none;
+      background: #fef3c7;
+      border-bottom: 2px solid #f59e0b;
+      color: #92400e;
+      text-align: center;
+      padding: 12px 20px;
+      font-weight: 700;
+      font-size: 0.9em;
+      direction: ltr;
+    }
+
+    /* ============================================================
+       NAVIGATION
+       ============================================================ */
+    .main-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-dark);
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .nav-inner { display: flex; gap: 0; }
+    .nav-tab {
+      background: none; border: none;
+      color: rgba(255,255,255,0.6);
+      font-size: 1em; font-weight: 600;
+      padding: 16px 28px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .nav-tab:hover { color: rgba(255,255,255,0.9); }
+    .nav-tab.active { color: var(--white); border-bottom-color: var(--gold-header); }
+
+    /* ============================================================
+       TAB CONTENT
+       ============================================================ */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ============================================================
+       CONTAINER
+       ============================================================ */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      padding: 40px;
+      border-top: 6px solid var(--primary-dark);
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .header { text-align: center; margin-bottom: 40px; }
+    .logo-placeholder {
+      width: 120px; height: 120px;
+      background-color: var(--primary-dark);
+      color: var(--white);
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 14px;
+      margin-bottom: 20px;
+      border: none;
+    }
+    .header h1 { color: var(--primary-dark); margin: 0 0 10px 0; font-size: 2.2em; }
+    .header h2 { color: var(--text-secondary); margin: 0; font-weight: 500; font-size: 1.3em; }
+
+    /* ============================================================
+       SPONSORING TABLE
+       ============================================================ */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    th, td { padding: 20px 18px; border-bottom: 1px solid #e2e8f0; text-align: center; line-height: 1.7; }
+    th:first-child, td:first-child { text-align: right; }
+    th { font-size: 1.2em; }
+    .th-features { background-color: var(--primary-dark); color: var(--white); border-radius: 0 8px 0 0; width: 40%; }
+    .th-officiel { background-color: var(--gold-header); color: var(--white); }
+    .th-standard { background-color: var(--silver-header); color: var(--white); border-radius: 8px 0 0 0; }
+    .price { display: block; font-size: 0.85em; font-weight: 600; margin-top: 5px; }
+    .feature-title { font-weight: bold; color: var(--primary-dark); font-size: 1.1em; display: block; }
+    .feature-fr { display: block; font-size: 0.88em; color: var(--text-secondary); margin-top: 6px; font-style: italic; direction: ltr; text-align: left; }
+    tbody tr:hover { background-color: #f1f5f9; }
+    tbody tr { transition: background-color 0.15s ease; }
+    td { font-size: 1em; color: var(--text-main); }
+
+    /* ============================================================
+       EXHIBITOR CARD
+       ============================================================ */
+    .exhibitor-card {
+      background: var(--white);
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 30px 35px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .exhibitor-card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; left: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--silver-standard), #cbd5e1);
+    }
+    .exhibitor-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+    }
+    .exhibitor-card-title { font-size: 1.4em; font-weight: 800; color: var(--primary-dark); }
+    .exhibitor-card-title small {
+      display: block; font-size: 0.6em; font-weight: normal;
+      color: var(--text-secondary); font-style: italic;
+      direction: ltr; text-align: left; margin-top: 4px;
+    }
+    .exhibitor-price-badge {
+      background: linear-gradient(135deg, var(--silver-header), var(--silver-standard));
+      color: var(--white);
+      font-size: 1.3em; font-weight: 800;
+      padding: 10px 24px; border-radius: 8px; white-space: nowrap;
+    }
+    .exhibitor-details { list-style: none; padding: 0; }
+    .exhibitor-details li {
+      padding: 12px 0; border-bottom: 1px solid #f1f5f9;
+      font-size: 1em; line-height: 1.8;
+      display: flex; align-items: flex-start; gap: 10px; color: var(--text-main);
+    }
+    .exhibitor-details li:last-child { border-bottom: none; }
+    .exhibitor-details li::before { content: '✓'; color: #22c55e; font-weight: 800; font-size: 1.1em; flex-shrink: 0; }
+    .exhibitor-detail-fr {
+      display: block; font-size: 0.88em; color: var(--text-secondary);
+      font-style: italic; direction: ltr; text-align: left; margin-top: 4px;
+    }
+
+    /* ============================================================
+       MARKETING NOTE
+       ============================================================ */
+    .marketing-note {
+      background-color: var(--gold-light-bg);
+      border-right: 5px solid var(--gold-premium);
+      padding: 25px; border-radius: 8px; margin-bottom: 30px;
+    }
+    .marketing-note h3 {
+      color: var(--primary-dark); margin-top: 0; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px; font-size: 1.15em; line-height: 1.6;
+    }
+    .note-text { display: flex; gap: 40px; line-height: 1.85; }
+    .note-ar { width: 50%; text-align: right; color: var(--text-main); }
+    .note-fr { width: 50%; text-align: left; direction: ltr; font-style: italic; color: var(--text-secondary); }
+
+    /* ============================================================
+       SPONSOR RESERVE BUTTONS
+       ============================================================ */
+    .sponsor-reserve-section {
+      text-align: center;
+      padding: 30px 20px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 2px dashed #e2e8f0;
+    }
+    .sponsor-reserve-section h3 {
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+      font-size: 1.3em;
+    }
+    .sponsor-reserve-section p {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-size: 0.95em;
+    }
+    .reserve-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .sponsor-reserve-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 36px;
+      border-radius: 10px;
+      font-size: 1.05em; font-weight: 800;
+      border: none; cursor: pointer; font-family: inherit;
+      transition: all 0.25s;
+    }
+    .sponsor-reserve-btn.gold {
+      background: linear-gradient(135deg, var(--gold-header), var(--gold-premium));
+      color: var(--white);
+      box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+    }
+    .sponsor-reserve-btn.gold:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,175,55,0.4); }
+    .sponsor-reserve-btn.silver {
+      background: linear-gradient(135deg, var(--silver-header), var(--silver-standard));
+      color: var(--white);
+      box-shadow: 0 4px 15px rgba(100,116,139,0.3);
+    }
+    .sponsor-reserve-btn.silver:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(100,116,139,0.4); }
+
+    /* ============================================================
+       MAP SECTION
+       ============================================================ */
+    .map-section { margin-top: 0; padding-top: 0; border-top: none; }
+    .map-section-title { text-align: center; margin-bottom: 32px; }
+    .map-section-title h2 { color: var(--primary-dark); font-size: 1.8em; font-weight: 900; margin-bottom: 6px; }
+    .map-section-title p { color: var(--text-secondary); font-size: 0.95em; font-style: italic; direction: ltr; }
+    .map-section-title .map-hint {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 6px 18px;
+      background: #ecfdf5;
+      border: 1px solid #86efac;
+      border-radius: 20px;
+      color: #166534;
+      font-size: 0.85em;
+      font-weight: 600;
+      direction: rtl;
+    }
+    body > .tab-content > .map-section,
+    .tab-content > .map-section {
+      width: 100%;
+      padding: 40px 20px 60px;
+      background: var(--bg-color);
+    }
+
+    /* ============================================================
+       MAP SCOPED STYLES
+       ============================================================ */
+    .reservation-guide {
+      background: #dbeafe;
+      color: #1e3a5f;
+      border: 1.5px solid #93c5fd;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin: 20px auto 0;
+      max-width: 900px;
+      text-align: center;
+      line-height: 1.7;
+      font-size: 0.97em;
+    }
+
+    .map-container {
+      --S: 40;
+      --m: calc(var(--S) * 1px);
+      --hall-w: calc(11 * var(--m));
+      --hall-h: calc(18 * var(--m));
+      --wall-border: 10px;
+      --ex-w: calc(2 * var(--m));
+      --ex-h: calc(2.5 * var(--m));
+      --sp-w: calc(4 * var(--m));
+      --sp-h: calc(2.5 * var(--m));
+      --x-lw: 0px;
+      --x-la: calc(2 * var(--m));
+      --x-ci: calc(3.5 * var(--m));
+      --x-ci-r: calc(5.5 * var(--m));
+      --x-ra: calc(7.5 * var(--m));
+      --x-rw: calc(9 * var(--m));
+      --gold-map: #d4af37;
+      --gold-map-light: #f5e17a;
+      --gold-map-dark: #b8960c;
+      --silver-map: #94a3b8;
+      --silver-map-light: #cdd5e0;
+      --silver-map-dark: #64748b;
+      --navy-map: #1e293b;
+      --navy-map-light: #334155;
+      --bg-page-map: #f0f4f8;
+      --bg-hall: #f8fafc;
+      --grid-minor: rgba(148,163,184,0.18);
+      --grid-major: rgba(148,163,184,0.40);
+      --seating-bg: #e2e8f0;
+      --green-map: #22c55e;
+      --gap: calc(1.5 * var(--m));
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--navy-map);
+      display: flex; flex-direction: column; align-items: center;
+      direction: ltr;
+    }
+    .map-container .expo-wrapper {
+      display: flex; align-items: flex-start; justify-content: center; gap: var(--gap);
+    }
+    .map-container .hall {
+      position: relative;
+      width: var(--hall-w); height: var(--hall-h);
+      background-color: var(--bg-hall);
+      background-image:
+        linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+      background-size:
+        calc(1*var(--m)) calc(1*var(--m)),
+        calc(1*var(--m)) calc(1*var(--m)),
+        calc(5*var(--m)) calc(5*var(--m)),
+        calc(5*var(--m)) calc(5*var(--m));
+      border: var(--wall-border) solid var(--navy-map);
+      box-shadow: 0 8px 40px rgba(30,41,59,0.18);
+      overflow: visible;
+    }
+    .map-container .hall-name {
+      position: absolute; bottom: calc(-1.6*var(--m));
+      left: 50%; transform: translateX(-50%);
+      font-size: 0.82rem; font-weight: 800; letter-spacing: 3px;
+      color: var(--navy-map); text-transform: uppercase; white-space: nowrap;
+    }
+    .map-container .dim {
+      position: absolute; font-size: 0.6rem; font-weight: 700;
+      color: var(--green-map); letter-spacing: 1px;
+      font-family: 'Consolas', monospace; pointer-events: none; z-index: 20;
+    }
+    .map-container .dim-top { top: -22px; left: 50%; transform: translateX(-50%); }
+    .map-container .dim-left { left: -38px; top: 50%; transform: translateY(-50%) rotate(-90deg); white-space: nowrap; }
+    .map-container .dim-right { right: -38px; top: 50%; transform: translateY(-50%) rotate(90deg); white-space: nowrap; }
+    .map-container .aisle {
+      position: absolute; top: 0; height: 100%;
+      background: rgba(148,163,184,0.06);
+      border-left: 1px dashed rgba(148,163,184,0.28);
+      border-right: 1px dashed rgba(148,163,184,0.28);
+      pointer-events: none; z-index: 0;
+    }
+    .map-container .aisle-left { left: calc(2*var(--m)); width: calc(1.5*var(--m)); }
+    .map-container .aisle-right { left: calc(7.5*var(--m)); width: calc(1.5*var(--m)); }
+
+    /* STANDS */
+    .map-container .stand {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 4px; cursor: pointer; z-index: 2;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      transform-origin: center; -webkit-user-select: none; user-select: none;
+    }
+    .map-container .stand:hover {
+      transform: scale(1.07); filter: brightness(1.14);
+      box-shadow: 0 6px 22px rgba(30,41,59,0.38) !important; z-index: 15;
+    }
+    .map-container .stand .s-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;
+      color: var(--navy-map); pointer-events: none; line-height: 1; margin-top: 0;
+    }
+    .map-container .stand .s-status {
+      font-size: 0.42rem; font-weight: 700;
+      pointer-events: none; line-height: 1; margin-top: 2px;
+      color: #fff;
+    }
+    .map-container .stand.exhibitor {
+      background: linear-gradient(160deg, var(--silver-map-light) 0%, var(--silver-map) 55%, var(--silver-map-dark) 100%);
+      border: 1.5px solid var(--silver-map-dark);
+      box-shadow: 0 2px 8px rgba(100,116,139,0.22);
+    }
+    .map-container .stand.sponsor {
+      background: linear-gradient(160deg, var(--gold-map-light) 0%, var(--gold-map) 55%, var(--gold-map-dark) 100%);
+      border: 1.5px solid var(--gold-map-dark);
+      box-shadow: 0 2px 10px rgba(212,175,55,0.30);
+    }
+
+    /* Stand status overrides */
+    .map-container .stand.status-pending {
+      background: linear-gradient(160deg, #fef3c7 0%, #f59e0b 55%, #d97706 100%) !important;
+      border-color: #d97706 !important;
+    }
+    .map-container .stand.status-reserved {
+      background: linear-gradient(160deg, #fecaca 0%, #ef4444 55%, #dc2626 100%) !important;
+      border-color: #dc2626 !important;
+    }
+    .map-container .stand.status-pending .s-label,
+    .map-container .stand.status-reserved .s-label { color: #fff; }
+
+    /* DOOR BREAK + ARCS */
+    .map-container .door-break { position: absolute; background: var(--bg-color); z-index: 6; pointer-events: none; }
+    .map-container .door-arc { position: absolute; border: 1.5px dashed rgba(30,41,59,0.28); pointer-events: none; z-index: 3; }
+    .map-container .door-label {
+      position: absolute; font-size: 0.46rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--silver-map-dark); pointer-events: none; z-index: 7; white-space: nowrap;
+    }
+    .map-container .rh-door-break { left: calc(-1*var(--wall-border) - 1px); top: 300px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .map-container .rh-door-label { left: -38px; top: 354px; transform: rotate(-90deg); }
+    .map-container .rh-arc-top { left: 0; top: 300px; width: 60px; height: 60px; border-top: none; border-left: none; border-bottom-right-radius: 60px; }
+    .map-container .rh-arc-bot { left: 0; top: 360px; width: 60px; height: 60px; border-bottom: none; border-left: none; border-top-right-radius: 60px; }
+    .map-container .lh-door-break { right: calc(-1*var(--wall-border) - 1px); top: 500px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .map-container .lh-door-label { right: -38px; top: 554px; transform: rotate(90deg); }
+    .map-container .lh-arc-top { right: 0; top: 500px; width: 60px; height: 60px; border-top: none; border-right: none; border-bottom-left-radius: 60px; }
+    .map-container .lh-arc-bot { right: 0; top: 560px; width: 60px; height: 60px; border-bottom: none; border-right: none; border-top-left-radius: 60px; }
+
+    /* CONFERENCE ZONE */
+    .map-container .conf-space {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: calc(6*var(--m));
+      background: var(--seating-bg);
+      border-bottom: 2px dashed var(--silver-map);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+      color: var(--navy-map-light); text-align: center; line-height: 1.6;
+      z-index: 2; pointer-events: none;
+    }
+    .map-container .zone-sep {
+      position: absolute; left: 0; top: calc(6*var(--m));
+      width: 100%; height: calc(1*var(--m));
+      border-top: 2px dashed var(--silver-map); border-bottom: 2px dashed var(--silver-map);
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; z-index: 1;
+    }
+    .map-container .zone-sep::after {
+      content: '— 1m BUFFER ZONE —';
+      font-size: 0.45rem; font-weight: 700; letter-spacing: 3px; color: var(--silver-map-dark);
+    }
+    .map-container .zone-tag {
+      position: absolute; right: calc(0.3*var(--m));
+      font-size: 0.48rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: rgba(100,116,139,0.7);
+      pointer-events: none; z-index: 20;
+    }
+
+    /* HALLWAY */
+    .map-container .hallway {
+      position: relative;
+      height: calc(var(--hall-h) + 2*var(--wall-border));
+      width: var(--gap);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; padding-bottom: calc(1*var(--m));
+    }
+    .map-container .hallway-floor {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent calc(var(--m) - 1px),
+        rgba(148,163,184,0.08) calc(var(--m) - 1px), rgba(148,163,184,0.08) var(--m)
+      );
+      border-left: 2px dashed rgba(148,163,184,0.28);
+      border-right: 2px dashed rgba(148,163,184,0.28);
+    }
+    .map-container .hallway-cl {
+      position: absolute; inset: 0; left: 50%; width: 2px;
+      background: repeating-linear-gradient(180deg,
+        var(--silver-map-dark) 0, var(--silver-map-dark) 8px, transparent 8px, transparent 18px);
+      opacity: 0.22;
+    }
+    .map-container .h-conn {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: repeating-linear-gradient(90deg,
+        rgba(30,41,59,0.22) 0, rgba(30,41,59,0.22) 6px, transparent 6px, transparent 12px);
+    }
+    .map-container .h-conn-rh { top: 360px; }
+    .map-container .h-conn-lh { top: 560px; }
+    .map-container .entrance {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .map-container .entrance-arch {
+      width: 80px; height: 40px;
+      border: 2px dashed rgba(30,41,59,0.28); border-bottom: none;
+      border-radius: 50px 50px 0 0; margin-bottom: 5px;
+    }
+    .map-container .entrance-label {
+      font-size: 0.55rem; font-weight: 800;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--navy-map);
+    }
+
+    /* TOOLTIP */
+    #tooltip {
+      position: fixed; pointer-events: none; z-index: 9999;
+      padding: 10px 16px; background: var(--primary-dark); color: #fff;
+      border-radius: 8px; font-size: 0.8rem; line-height: 1.55;
+      box-shadow: 0 8px 28px rgba(30,41,59,0.38);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease; white-space: nowrap;
+      direction: ltr; text-align: left;
+    }
+    #tooltip.show { opacity: 1; visibility: visible; }
+    #tooltip .tt-head { font-weight: 700; font-size: 0.83rem; }
+    #tooltip .tt-sub { color: #cbd5e1; font-size: 0.75rem; margin-top: 2px; }
+
+    /* LEGEND */
+    .map-container .legend {
+      margin-top: 28px; background: #fff; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 12px 24px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 20px;
+      box-shadow: 0 2px 8px rgba(30,41,59,0.07); direction: ltr;
+    }
+    .map-container .legend-title { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--navy-map); }
+    .map-container .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--navy-map-light); }
+    .map-container .lg-sw { width: 26px; height: 15px; border-radius: 3px; flex-shrink: 0; }
+    .map-container .lg-gold { background: linear-gradient(135deg,var(--gold-map-light),var(--gold-map-dark)); border:1px solid var(--gold-map-dark); }
+    .map-container .lg-silver { background: linear-gradient(135deg,var(--silver-map-light),var(--silver-map-dark)); border:1px solid var(--silver-map-dark); }
+    .map-container .lg-pending { background: linear-gradient(135deg,#fef3c7,#d97706); border:1px solid #d97706; }
+    .map-container .lg-reserved { background: linear-gradient(135deg,#fecaca,#dc2626); border:1px solid #dc2626; }
+    .map-container .lg-conf { background: var(--seating-bg); border:1px dashed var(--silver-map); }
+
+    /* ============================================================
+       RESERVATION MODAL
+       ============================================================ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 16px;
+      width: 100%; max-width: 500px; max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { padding: 24px 28px 16px; border-bottom: 1px solid #e2e8f0; }
+    .modal-header h3 { font-size: 1.3em; color: var(--primary-dark); margin: 0; }
+    .modal-stand-info { font-size: 0.9em; color: var(--text-secondary); margin-top: 4px; }
+    .modal-body { padding: 24px 28px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 700; font-size: 0.9em; color: var(--text-main); margin-bottom: 6px; }
+    .form-group input {
+      width: 100%; padding: 12px 14px;
+      border: 2px solid #e2e8f0; border-radius: 8px;
+      font-size: 1em; font-family: inherit;
+      transition: border-color 0.2s; direction: rtl;
+    }
+    .form-group input:focus { outline: none; border-color: var(--gold-header); }
+    .modal-footer { padding: 16px 28px 24px; display: flex; gap: 12px; justify-content: flex-end; }
+    .btn {
+      padding: 12px 24px; border-radius: 8px; font-size: 0.95em; font-weight: 700;
+      cursor: pointer; border: none; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--gold-header); color: var(--white); }
+    .btn-primary:hover { background: var(--gold-premium); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: #e2e8f0; color: var(--text-main); }
+    .btn-secondary:hover { background: #cbd5e1; }
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    #toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--primary-dark); color: var(--white);
+      padding: 14px 28px; border-radius: 10px;
+      font-size: 0.95em; font-weight: 600;
+      z-index: 500;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+      .main-nav { padding: 0 10px; }
+      .nav-tab { padding: 14px 18px; font-size: 0.9em; }
+      .container { padding: 20px 14px; margin: 16px 8px; border-radius: 8px; }
+      .header h1 { font-size: 1.5em; }
+      .header h2 { font-size: 1.1em; }
+
+      table, thead, tbody, th, td, tr { display: block; }
+      table { margin-bottom: 20px; }
+      thead tr { display: none; }
+      tbody tr {
+        margin-bottom: 20px; border: 1px solid #e2e8f0;
+        border-radius: 10px; overflow: hidden; background: var(--white);
+      }
+      td {
+        padding: 14px 16px; text-align: right;
+        position: relative; border-bottom: 1px solid #f1f5f9;
+      }
+      td:last-child { border-bottom: none; }
+      td:first-child { background: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 16px; }
+      td:not(:first-child)::before {
+        content: attr(data-label);
+        display: block; font-weight: 800; font-size: 0.78em;
+        color: var(--white); padding: 4px 10px; border-radius: 4px;
+        margin-bottom: 8px; width: fit-content;
+      }
+      td:nth-child(2)::before { background: var(--gold-header); }
+      td:nth-child(3)::before { background: var(--silver-header); }
+
+      .note-text { flex-direction: column; gap: 20px; }
+      .note-ar, .note-fr { width: 100%; }
+      .exhibitor-card-header { flex-direction: column; align-items: stretch; text-align: center; }
+      .exhibitor-price-badge { text-align: center; font-size: 1.1em; }
+      .reserve-buttons { flex-direction: column; align-items: stretch; }
+      .sponsor-reserve-btn { justify-content: center; }
+      .map-section-title h2 { font-size: 1.3em; }
+
+      .map-container .expo-wrapper {
+        flex-direction: column; align-items: center; gap: 32px;
+      }
+      .map-container .hallway {
+        width: var(--hall-w); height: 56px;
+        flex-direction: row; align-items: center; justify-content: center; padding: 0;
+      }
+      .map-container .hallway-floor,
+      .map-container .hallway-cl,
+      .map-container .h-conn { display: none; }
+      .map-container .entrance { flex-direction: row; align-items: center; gap: 8px; }
+      .map-container .entrance-arch {
+        width: 36px; height: 18px; margin-bottom: 0;
+        border-radius: 36px 36px 0 0; transform: rotate(-90deg);
+      }
+      .map-container .legend {
+        flex-direction: column; align-items: flex-start;
+        padding: 10px 14px; gap: 10px;
+      }
+
+      .modal { max-width: 95vw; }
+      .modal-header, .modal-body, .modal-footer { padding-left: 20px; padding-right: 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 14px 10px; }
+      .header h1 { font-size: 1.2em; }
+      .header h2 { font-size: 0.95em; }
+      .exhibitor-card { padding: 18px 14px; }
+      .exhibitor-card-title { font-size: 1.15em; }
+      .exhibitor-price-badge { font-size: 0.95em; padding: 8px 16px; }
+      .nav-tab { padding: 12px 14px; font-size: 0.85em; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Firebase warning banner -->
+  <div id="firebase-warning">
+    ⚠️ Firebase is not configured. Reservations will not work. Please update the firebaseConfig in the source code.
+  </div>
+
+  <!-- ============================================================
+       NAVIGATION BAR
+       ============================================================ -->
+  <nav class="main-nav">
+    <div class="nav-inner">
+      <button class="nav-tab active" data-tab="exhibition">خريطة المعرض</button>
+      <button class="nav-tab" data-tab="sponsoring">خطة الرعاية</button>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       TAB 1: SPONSORING PLAN
+       ============================================================ -->
+  <div class="tab-content" id="tab-sponsoring">
+    <div class="container">
+
+      <div class="header">
+        <img src="SAVE_20260307_222022.JPG" alt="شعار الرابطة"
+          class="logo-placeholder" style="object-fit: contain; background: transparent;">
+        <h1>عروض الرعاية - معرض تمكين 2026</h1>
+        <h2>Les Packs de Sponsoring - Tamkeen Expo</h2>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="th-features">المزايا والعروض <br><span style="font-size:0.7em; font-weight:normal;">Les Offres &amp; Contre-parties</span></th>
+            <th class="th-officiel">الراعي الرسمي<br><span style="font-size:0.7em; font-weight:normal;">Sponsor Officiel</span><span class="price">180,000 د.ج</span></th>
+            <th class="th-standard">الراعي المعتمد<br><span style="font-size:0.7em; font-weight:normal;">Sponsor Standard</span><span class="price">50,000 د.ج</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Sponsor Officiel / Standard">
+              <span class="feature-title">1. الحضور الرقمي</span>
+              <span class="feature-fr">Visibilité Numérique</span>
+            </td>
+            <td data-label="الراعي الرسمي">منشور حصري مخصص للشركة + مقابلة فيديو ترويجية خلال الفعالية.</td>
+            <td data-label="الراعي المعتمد">ظهور ضمن المنشور المجمع للشركاء المعتمدين.</td>
+          </tr>
+          <tr>
+            <td data-label="Sponsor Officiel / Standard">
+              <span class="feature-title">2. الكلمة الافتتاحية</span>
+              <span class="feature-fr">Prise de Parole</span>
+            </td>
+            <td data-label="الراعي الرسمي">مساحة زمنية (5-10 دقائق) في حفل الافتتاح للتعريف بالشركة.</td>
+            <td data-label="الراعي المعتمد">شكر وتقدير رسمي من منشط الفعالية.</td>
+          </tr>
+          <tr>
+            <td data-label="Sponsor Officiel / Standard">
+              <span class="feature-title">3. الإعلانات واللافتات</span>
+              <span class="feature-fr">Affichage &amp; Signalétique</span>
+            </td>
+            <td data-label="الراعي الرسمي">تواجد الشعار في الواجهة الخارجية الرئيسية + اللافتات الداخلية (حجم كبير).</td>
+            <td data-label="الراعي المعتمد">تواجد الشعار في اللافتات الداخلية فقط (حجم قياسي).</td>
+          </tr>
+          <tr>
+            <td data-label="Sponsor Officiel / Standard">
+              <span class="feature-title">4. الهوية البصرية (الصور)</span>
+              <span class="feature-fr">Identité Visuelle (Médias)</span>
+            </td>
+            <td data-label="الراعي الرسمي">دمج شعار الشركة ضمن الإطار الرسمي (Layout) لصور الفعالية.</td>
+            <td data-label="الراعي المعتمد">غير مشمول.</td>
+          </tr>
+          <tr>
+            <td data-label="Sponsor Officiel / Standard">
+              <span class="feature-title">5. مساحة العرض (الجناح)</span>
+              <span class="feature-fr">Espace d'Exposition</span>
+            </td>
+            <td data-label="الراعي الرسمي">جناح مركزي مميز (Island Stand) مفتوح على 3 واجهات بمساحة 10 م² (مخصص للأجنحة S1 إلى S4). <br><br> <span class="feature-fr">Stand Central Premium ouvert sur 3 façades de 10 m² (Réservé aux stands S1 à S4).</span></td>
+            <td data-label="الراعي المعتمد">موقع استراتيجي مع إمكانية حجز حتى جناحين متلاصقين (10 م²) مجاناً ضمن الباقة (قيمة الوحدة العادية 5,000 د.ج). <br><br> <span class="feature-fr">Emplacement stratégique avec possibilité de réserver jusqu'à 2 stands adjacents (10 m²) gratuitement (valeur unitaire 5 000 DZD).</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="marketing-note">
+        <h3>🚀 لماذا ترعى معرض تمكين؟ (تأثير رقمي واستقطاب حقيقي)</h3>
+        <div class="note-text">
+          <div class="note-ar">
+            بالاستناد إلى الأرقام والنجاح الكبير لنسخة 2025، يوفر لكم معرض تمكين أكثر من مجرد مساحة إعلانية.
+            تتمتع منصاتنا الرقمية بجمهور واسع ومعدلات تفاعل استثنائية، مما يضمن لعلامتكم التجارية وصولاً مباشراً
+            وتأثيراً قوياً وسط أفضل الكفاءات والمحترفين، ويحقق لكم أعلى عائد على استثماركم التسويقي.
+          </div>
+          <div class="note-fr">
+            Fort du succès éclatant de l'édition 2025, Tamkeen Expo vous offre bien plus qu'une simple
+            visibilité. Nos plateformes bénéficient d'une audience qualifiée et d'un taux d'engagement
+            exceptionnel, garantissant à nos sponsors un retour sur investissement optimal et une portée massive.
+          </div>
+        </div>
+      </div>
+
+      <!-- Sponsor Reservation Buttons -->
+      <div class="sponsor-reserve-section">
+        <h3>احجز مكانك الآن</h3>
+        <p>Réservez votre place maintenant</p>
+        <div class="reserve-buttons">
+          <button class="sponsor-reserve-btn gold" data-reserve-type="sponsoring" data-reserve-tier="officiel">
+            🏆 احجز كراعٍ رسمي — 180,000 د.ج
+          </button>
+          <button class="sponsor-reserve-btn silver" data-reserve-type="sponsoring" data-reserve-tier="standard">
+            🥈 احجز كراعٍ معتمد — 50,000 د.ج
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TAB 2: EXHIBITION MAP
+       ============================================================ -->
+  <div class="tab-content active" id="tab-exhibition">
+    <div class="map-section">
+      <div class="map-section-title">
+        <img src="SAVE_20260307_222022.JPG" alt="شعار الرابطة"
+          class="logo-placeholder" style="object-fit: contain; background: transparent;">
+        <h2>المخطط التفاعلي للمعرض</h2>
+        <p>Plan d'Exposition Interactif</p>
+        <div class="map-hint">🟢 اضغط على أي جناح متاح للحجز — Click any available stand to reserve</div>
+      </div>
+
+      <!-- EVENT INFO BAR -->
+      <div style="max-width:900px;margin:0 auto 24px;padding:0 16px;">
+        <div style="background:#1e293b;color:#f8fafc;border-radius:14px;padding:20px 28px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;box-shadow:0 4px 18px rgba(0,0,0,0.13);">
+          <div style="flex:1;min-width:220px;">
+            <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px;">📅 Date / التاريخ</div>
+            <div style="font-weight:700;font-size:1.05em;">23 – 24 Mars 2026 &nbsp;|&nbsp; 23 – 24 مارس 2026</div>
+          </div>
+          <div style="flex:2;min-width:260px;">
+            <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px;">📍 Lieu / المكان</div>
+            <div style="font-weight:700;font-size:1em;">دار الأعراس (أولاد داود)، خلف ثانوية باسليمان سليمان، بريان</div>
+            <div style="font-size:0.88em;color:#cbd5e1;margin-top:2px;">Dar El Aaras (Ouled Daoud), Berriane</div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:4px;">🗺️ Carte / الخريطة</div>
+            <a href="https://maps.app.goo.gl/w4q3P6CDNdaZzaoc8" target="_blank" rel="noopener"
+               style="display:inline-block;margin-top:4px;padding:7px 18px;background:#b8960c;color:#fff;border-radius:8px;font-weight:700;font-size:0.9em;text-decoration:none;">
+              Voir sur la carte | عرض الإحداثيات
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPOSANT STANDARD CARD -->
+      <div style="max-width:900px;margin:0 auto 28px;padding:0 16px;">
+        <div class="exhibitor-card">
+          <div class="exhibitor-card-header">
+            <div class="exhibitor-card-title">
+              عرض العارضين
+              <small>Offre Exposant Standard</small>
+            </div>
+            <div class="exhibitor-price-badge">5,000 د.ج</div>
+          </div>
+          <ul class="exhibitor-details">
+            <li>
+              <span>
+                مساحة عرض قياسية 5 متر مربع (2 × 2.5 متر).
+                <span class="exhibitor-detail-fr">Stand d'exposition standard de 5 m² (2 x 2.5m).</span>
+              </span>
+            </li>
+            <li>
+              <span>
+                إمكانية حجز جناحين متلاصقين كحد أقصى (5,000 د.ج للوحدة الواحدة). <br> <span class="feature-fr" style="display: block; font-size: 0.85em; color: #64748b; margin-top: 4px; font-style: italic;">Possibilité de réserver jusqu'à 2 stands adjacents au maximum (5 000 DZD par unité).</span>
+              </span>
+            </li>
+          </ul>
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid #e2e8f0;">
+            <div style="font-weight:700;font-size:1em;color:#1e293b;margin-bottom:12px;">شروط وتجهيزات العرض <span style="font-weight:400;font-size:0.85em;color:#64748b;">| Équipements requis</span></div>
+            <ul class="exhibitor-details">
+              <li>
+                <span>
+                  إحضار أدوات عرض الهوية البصرية (رولاب 1 أو 2، carte visite...).
+                  <span class="feature-fr">Apporter les outils d'identité visuelle (Rollup, carte de visite...)</span>
+                </span>
+              </li>
+              <li>
+                <span>
+                  إحضار مكتب أو ديكور خاص بالعرض (اختياري / مستحسن)
+                  <br><span class="feature-fr">Apporter un bureau ou décor personnalisé pour l'exposition (Optionnel / Recommandé)</span>
+                </span>
+              </li>
+              <li>
+                <span>
+                  إحضار المنتج إن أمكن، أو catalogue des produits...
+                  <span class="feature-fr">Apporter le produit si possible, ou le catalogue des produits...</span>
+                </span>
+              </li>
+            </ul>
+            <div style="margin-top:14px;padding:12px 16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.3em;flex-shrink:0;">🪑</span>
+              <div>
+                <span style="font-weight:700;color:#166534;">تجهيزات متوفرة | Équipements fournis :</span>
+                <span style="color:#15803d;"> توفير طاولة وكرسيين لكل وحدة عرض</span>
+                <span class="feature-fr">Fourniture d'une table et de deux chaises pour chaque stand (gratuit)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reservation-guide">
+        <strong>📌 كيفية الحجز:</strong> يرجى اختيار الجناح المناسب والضغط عليه مباشرة في المخطط التفاعلي أدناه للبدء في عملية الحجز.
+        <br>
+        <span style="font-size: 0.85em; font-style: italic; opacity: 0.8;">📌 <strong>Comment réserver :</strong> Veuillez choisir et cliquer directement sur le stand souhaité sur le plan interactif ci-dessous pour lancer la réservation.</span>
+      </div>
+
+      <div class="map-container">
+        <div class="expo-wrapper">
+
+          <!-- LEFT HALL -->
+          <div class="hall" id="leftHall">
+            <span class="dim dim-top">11m</span>
+            <span class="dim dim-left">18m</span>
+            <span class="zone-tag" style="top:10px;">Zone A : Conférence | منطقة المؤتمرات</span>
+            <span class="zone-tag" style="top:255px;">Zone B : Exposition | منطقة المعرض</span>
+
+            <div class="aisle aisle-left"></div>
+            <div class="aisle aisle-right"></div>
+
+            <div class="conf-space">ESPACE CONFÉRENCE<br>مساحة المؤتمرات</div>
+
+            <!-- Zone B — Left Wall -->
+            <div class="stand exhibitor" style="left:0px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="A1"><span class="s-label">A1</span></div>
+            <div class="stand exhibitor" style="left:0px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="A2"><span class="s-label">A2</span></div>
+            <div class="stand exhibitor" style="left:0px;top:460px;width:80px;height:100px;" data-type="exhibitor" data-id="A3"><span class="s-label">A3</span></div>
+
+            <!-- Zone B — Center Island -->
+            <div class="stand sponsor" style="left:140px;top:260px;width:160px;height:100px;" data-type="sponsor" data-id="S1"><span class="s-label">S1</span></div>
+            <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="A4"><span class="s-label">A4</span></div>
+            <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="A5"><span class="s-label">A5</span></div>
+            <div class="stand sponsor" style="left:140px;top:460px;width:160px;height:100px;" data-type="sponsor" data-id="S2"><span class="s-label">S2</span></div>
+
+            <!-- Zone B — Right Wall -->
+            <div class="stand exhibitor" style="left:360px;top:300px;width:80px;height:100px;" data-type="exhibitor" data-id="A6"><span class="s-label">A6</span></div>
+            <div class="stand exhibitor" style="left:360px;top:400px;width:80px;height:100px;" data-type="exhibitor" data-id="A7"><span class="s-label">A7</span></div>
+
+            <!-- Zone B — Bottom Wall -->
+            <div class="stand exhibitor" style="left:5px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="A9"><span class="s-label">A9</span></div>
+            <div class="stand exhibitor" style="left:113px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="A10"><span class="s-label">A10</span></div>
+            <div class="stand exhibitor" style="left:221px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="A11"><span class="s-label">A11</span></div>
+            <div class="stand exhibitor" style="left:329px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="A8"><span class="s-label">A8</span></div>
+
+            <div class="door-break lh-door-break"></div>
+            <span class="door-label lh-door-label">PORTE | باب</span>
+            <div class="door-arc lh-arc-top"></div>
+            <div class="door-arc lh-arc-bot"></div>
+            <span class="hall-name">HALL GAUCHE | القاعة اليسرى</span>
+          </div>
+
+          <!-- HALLWAY -->
+          <div class="hallway">
+            <div class="hallway-floor"></div>
+            <div class="hallway-cl"></div>
+            <div class="h-conn h-conn-rh"></div>
+            <div class="h-conn h-conn-lh"></div>
+            <div class="entrance">
+              <div class="entrance-arch"></div>
+              <span class="entrance-label">ENTRÉE | المدخل</span>
+            </div>
+          </div>
+
+          <!-- RIGHT HALL -->
+          <div class="hall" id="rightHall">
+            <span class="dim dim-top">11m</span>
+            <span class="dim dim-right">18m</span>
+
+            <div class="aisle aisle-left"></div>
+            <div class="aisle aisle-right"></div>
+
+            <!-- Top Wall -->
+            <div class="stand exhibitor" style="left:90px;top:0px;width:100px;height:80px;" data-type="exhibitor" data-id="B1"><span class="s-label">B1</span></div>
+            <div class="stand exhibitor" style="left:195px;top:0px;width:100px;height:80px;" data-type="exhibitor" data-id="B2"><span class="s-label">B2</span></div>
+            <div class="stand exhibitor" style="left:300px;top:0px;width:100px;height:80px;" data-type="exhibitor" data-id="B3"><span class="s-label">B3</span></div>
+
+            <!-- Left Wall -->
+            <div class="stand exhibitor" style="left:0px;top:100px;width:80px;height:100px;" data-type="exhibitor" data-id="B4"><span class="s-label">B4</span></div>
+            <div class="stand exhibitor" style="left:0px;top:200px;width:80px;height:100px;" data-type="exhibitor" data-id="B5"><span class="s-label">B5</span></div>
+            <div class="stand exhibitor" style="left:0px;top:420px;width:80px;height:100px;" data-type="exhibitor" data-id="B6"><span class="s-label">B6</span></div>
+            <div class="stand exhibitor" style="left:0px;top:520px;width:80px;height:100px;" data-type="exhibitor" data-id="B7"><span class="s-label">B7</span></div>
+
+            <!-- Center Island -->
+            <div class="stand sponsor" style="left:140px;top:160px;width:160px;height:100px;" data-type="sponsor" data-id="S3"><span class="s-label">S3</span></div>
+            <div class="stand exhibitor" style="left:140px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B8"><span class="s-label">B8</span></div>
+            <div class="stand exhibitor" style="left:220px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B9"><span class="s-label">B9</span></div>
+            <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="B10"><span class="s-label">B10</span></div>
+            <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="B11"><span class="s-label">B11</span></div>
+            <div class="stand sponsor" style="left:140px;top:460px;width:160px;height:100px;" data-type="sponsor" data-id="S4"><span class="s-label">S4</span></div>
+
+            <!-- Right Wall -->
+            <div class="stand exhibitor" style="left:360px;top:110px;width:80px;height:100px;" data-type="exhibitor" data-id="B12"><span class="s-label">B12</span></div>
+            <div class="stand exhibitor" style="left:360px;top:210px;width:80px;height:100px;" data-type="exhibitor" data-id="B13"><span class="s-label">B13</span></div>
+            <div class="stand exhibitor" style="left:360px;top:310px;width:80px;height:100px;" data-type="exhibitor" data-id="B14"><span class="s-label">B14</span></div>
+            <div class="stand exhibitor" style="left:360px;top:410px;width:80px;height:100px;" data-type="exhibitor" data-id="B15"><span class="s-label">B15</span></div>
+            <div class="stand exhibitor" style="left:360px;top:510px;width:80px;height:100px;" data-type="exhibitor" data-id="B16"><span class="s-label">B16</span></div>
+
+            <!-- Bottom Wall -->
+            <div class="stand exhibitor" style="left:90px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="B17"><span class="s-label">B17</span></div>
+            <div class="stand exhibitor" style="left:195px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="B18"><span class="s-label">B18</span></div>
+            <div class="stand exhibitor" style="left:300px;top:640px;width:100px;height:80px;" data-type="exhibitor" data-id="B19"><span class="s-label">B19</span></div>
+
+            <div class="door-break rh-door-break"></div>
+            <span class="door-label rh-door-label">PORTE | باب</span>
+            <div class="door-arc rh-arc-top"></div>
+            <div class="door-arc rh-arc-bot"></div>
+            <span class="hall-name">HALL DROIT | القاعة اليمنى</span>
+          </div>
+
+        </div><!-- /.expo-wrapper -->
+
+        <!-- LEGEND -->
+        <div class="legend">
+          <span class="legend-title">Légende | مفتاح المخطط</span>
+          <div class="legend-item"><div class="lg-sw lg-gold"></div>Sponsor | راعي — 10 m²</div>
+          <div class="legend-item"><div class="lg-sw lg-silver"></div>Exposant | عارض — 5 m²</div>
+          <div class="legend-item"><div class="lg-sw lg-pending"></div>En attente | قيد الانتظار</div>
+          <div class="legend-item"><div class="lg-sw lg-reserved"></div>Réservé | محجوز</div>
+          <div class="legend-item"><div class="lg-sw lg-conf"></div>Espace Conférence | مساحة المؤتمرات</div>
+        </div>
+      </div><!-- /.map-container -->
+    </div><!-- /.map-section -->
+  </div>
+
+  <!-- ============================================================
+       RESERVATION MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="reserveModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">طلب حجز</h3>
+        <div class="modal-stand-info" id="modalStandInfo"></div>
+      </div>
+      <form id="reserveForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>الاسم الكامل / Nom complet *</label>
+            <input type="text" id="f-name" required autocomplete="name" placeholder="مثال: أحمد بن محمد">
+          </div>
+          <div class="form-group">
+            <label>اسم الشركة / Entreprise *</label>
+            <input type="text" id="f-company" required autocomplete="organization" placeholder="مثال: شركة النور للتكنولوجيا">
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف / Téléphone *</label>
+            <input type="tel" id="f-phone" required autocomplete="tel" placeholder="07XX XXX XXX" style="direction:ltr;text-align:left;">
+          </div>
+          <div class="form-group">
+            <label>البريد الإلكتروني / Email *</label>
+            <input type="email" id="f-email" required autocomplete="email" placeholder="exemple@email.com" style="direction:ltr;text-align:left;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modalCloseBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary" id="modalSubmitBtn">إرسال طلب الحجز</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <!-- Tooltip -->
+  <div id="tooltip"><div class="tt-head"></div><div class="tt-sub"></div></div>
+
+  <!-- ============================================================
+       FIREBASE SDK (compat mode — works client-side)
+       ============================================================ -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* ===========================================================
+       CONFIGURATION — PASTE YOUR FIREBASE CONFIG HERE
+       =========================================================== */
+    const PROJECT_ID  = 'tamkeen-expo-2026';
+    const NTFY_TOPIC  = 'tamkeen-expo-2026-admin-zeyd'; // Change this to something private if you want
+    const API_KEY    = 'AIzaSyCQ4x1IWLo1L-o8WJ0c0mNGfmX-nN2s-qg';
+    const DB_NAME    = 'default'; // Named database (not the default (default))
+    const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID +
+                       '/databases/' + DB_NAME + '/documents';
+
+    document.getElementById('firebase-warning').style.display = 'none';
+
+    /* ===========================================================
+       STATE
+       =========================================================== */
+    const standStatuses = {};
+    const standCompanies = {};
+    let showCompanyNames = false;
+    let allReservations = [];
+    let currentReservation = { standId: null, type: null, tier: null };
+
+    /* ===========================================================
+       HELPERS
+       =========================================================== */
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('fr-DZ', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    /* ===========================================================
+       TAB SWITCHING
+       =========================================================== */
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    /* ===========================================================
+       RESERVATION MODAL
+       =========================================================== */
+    const modal = document.getElementById('reserveModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalStandInfo = document.getElementById('modalStandInfo');
+    const reserveForm = document.getElementById('reserveForm');
+    const submitBtn = document.getElementById('modalSubmitBtn');
+
+    function openModal(standId, type, tier) {
+      currentReservation = { standId, type, tier };
+
+      if (type === 'sponsoring') {
+        const tierName = tier === 'officiel' ? 'الراعي الرسمي — Sponsor Officiel' : 'الراعي المعتمد — Sponsor Standard';
+        const price = tier === 'officiel' ? '180,000 د.ج' : '50,000 د.ج';
+        modalTitle.textContent = 'طلب حجز رعاية';
+        modalStandInfo.textContent = tierName + ' — ' + price;
+      } else {
+        const typeName = type === 'sponsor' ? 'Sponsor Stand (10 m²)' : 'Exhibitor Stand (5 m²)';
+        modalTitle.textContent = 'طلب حجز جناح';
+        modalStandInfo.textContent = 'Stand: ' + standId + ' — ' + typeName;
+      }
+
+      reserveForm.reset();
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'إرسال طلب الحجز';
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+    }
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    /* ===========================================================
+       FORM SUBMISSION
+       =========================================================== */
+    reserveForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'جاري الإرسال...';
+
+      const body = {
+        fields: {
+          standId: { stringValue: currentReservation.standId || '' },
+          type:    { stringValue: currentReservation.type    || '' },
+          tier:    { stringValue: currentReservation.tier    || '' },
+          name:    { stringValue: document.getElementById('f-name').value.trim() },
+          company: { stringValue: document.getElementById('f-company').value.trim() },
+          phone:   { stringValue: document.getElementById('f-phone').value.trim() },
+          email:   { stringValue: document.getElementById('f-email').value.trim() },
+          status:  { stringValue: 'pending' }
+        }
+      };
+
+      try {
+        const res = await fetch(FS_BASE + '/reservations?key=' + API_KEY, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
+        }
+        // Capture values BEFORE closeModal() resets the form
+        const notifName    = document.getElementById('f-name').value.trim();
+        const notifCompany = document.getElementById('f-company').value.trim();
+        const notifType    = currentReservation.type;
+        const notifStandId = currentReservation.standId;
+        const notifTier    = currentReservation.tier;
+
+        closeModal();
+        showToast('✅ تم إرسال طلب الحجز بنجاح! سنتواصل معك قريباً');
+        pollStandStatuses();
+
+        // Push notification via server-side proxy (avoids browser blockers)
+        const isSponsoring = notifType === 'sponsoring';
+        const standInfo = isSponsoring
+          ? 'Sponsoring (' + (notifTier || '') + ')'
+          : 'Stand ' + (notifStandId || '');
+        const notifBody = standInfo + ' | ' + notifName + (notifCompany ? ' — ' + notifCompany : '');
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Tamkeen Expo — Nouvelle reservation!',
+            body:  notifBody
+          })
+        }).catch(() => {});
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'إرسال طلب الحجز';
+        showToast('❌ ' + err.message);
+      }
+    });
+
+    /* ===========================================================
+       STAND CLICK HANDLERS (Exhibition Map)
+       =========================================================== */
+    document.querySelectorAll('.stand').forEach(stand => {
+      stand.addEventListener('click', () => {
+        const id = stand.dataset.id;
+        const status = standStatuses[id];
+
+        if (status === 'reserved') {
+          showToast('🔴 هذا الجناح محجوز بالفعل — Ce stand est déjà réservé');
+          return;
+        }
+        if (status === 'pending') {
+          showToast('🟡 يوجد طلب حجز قيد الانتظار — Réservation en attente');
+          return;
+        }
+
+        openModal(id, stand.dataset.type, null);
+      });
+    });
+
+    /* ===========================================================
+       SPONSOR RESERVE BUTTONS (Sponsoring Tab)
+       =========================================================== */
+    document.querySelectorAll('.sponsor-reserve-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openModal(null, btn.dataset.reserveType, btn.dataset.reserveTier);
+      });
+    });
+
+    /* ===========================================================
+       STAND STATUS POLLING (REST API — every 20s)
+       =========================================================== */
+    function getField(fields, key) {
+      const f = fields && fields[key];
+      if (!f) return null;
+      return f.stringValue ?? f.integerValue ?? (f.nullValue !== undefined ? null : null);
+    }
+
+    async function pollStandStatuses() {
+      try {
+        const res = await fetch(FS_BASE + '/reservations?key=' + API_KEY + '&pageSize=300');
+        if (!res.ok) return;
+        const data = await res.json();
+        const docs = data.documents || [];
+
+        // Rebuild statuses
+        Object.keys(standStatuses).forEach(k => delete standStatuses[k]);
+        Object.keys(standCompanies).forEach(k => delete standCompanies[k]);
+        docs.forEach(doc => {
+          const f = doc.fields || {};
+          const standId = getField(f, 'standId');
+          const status  = getField(f, 'status');
+          if (standId && status !== 'rejected' && status !== 'cancelled') {
+            if (!standStatuses[standId] || status === 'confirmed') {
+              standStatuses[standId] = status === 'confirmed' ? 'reserved' : 'pending';
+              standCompanies[standId] = getField(f, 'company') || '';
+            }
+          }
+        });
+
+        updateStandColors();
+      } catch (e) { /* silent fail — map still usable */ }
+    }
+
+    async function fetchPublicSetting() {
+      try {
+        const res = await fetch(FS_BASE + '/settings/mapDisplay?key=' + API_KEY);
+        if (!res.ok) return;
+        const data = await res.json();
+        const val = data.fields && data.fields.showCompanyNames && data.fields.showCompanyNames.booleanValue;
+        showCompanyNames = !!val;
+      } catch (e) {}
+    }
+
+    pollStandStatuses();
+    fetchPublicSetting();
+    setInterval(pollStandStatuses, 20000);
+    setInterval(fetchPublicSetting, 20000);
+
+    function updateStandColors() {
+      document.querySelectorAll('.stand').forEach(stand => {
+        const id = stand.dataset.id;
+        stand.classList.remove('status-pending', 'status-reserved');
+
+        // Remove old status text
+        const old = stand.querySelector('.s-status');
+        if (old) old.remove();
+
+        const status = standStatuses[id];
+        if (status === 'pending') {
+          stand.classList.add('status-pending');
+          const el = document.createElement('span');
+          el.className = 's-status';
+          el.textContent = (showCompanyNames && standCompanies[id]) ? standCompanies[id] : 'قيد الانتظار';
+          stand.appendChild(el);
+        } else if (status === 'reserved') {
+          stand.classList.add('status-reserved');
+          const el = document.createElement('span');
+          el.className = 's-status';
+          el.textContent = (showCompanyNames && standCompanies[id]) ? standCompanies[id] : 'محجوز';
+          stand.appendChild(el);
+        }
+      });
+    }
+
+    /* ===========================================================
+       TOOLTIP (hover info on stands)
+       =========================================================== */
+    const tooltip = document.getElementById('tooltip');
+    const ttHead  = tooltip.querySelector('.tt-head');
+    const ttSub   = tooltip.querySelector('.tt-sub');
+    const OFFSET  = 18;
+
+    const STAND_DATA = {
+      sponsor:   { head: 'Sponsor | راعي',     sub: '10 m² (4×2.5m)' },
+      exhibitor: { head: 'Exposant | عارض', sub: '5 m² (2×2.5m)' }
+    };
+
+    document.addEventListener('mousemove', (e) => {
+      if (!tooltip.classList.contains('show')) return;
+      let x = e.clientX + OFFSET, y = e.clientY + OFFSET;
+      const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+      if (x + w > window.innerWidth  - 10) x = e.clientX - w - OFFSET;
+      if (y + h > window.innerHeight - 10) y = e.clientY - h - OFFSET;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top  = y + 'px';
+    });
+
+    document.querySelectorAll('.stand').forEach(stand => {
+      stand.addEventListener('mouseenter', (e) => {
+        const d = STAND_DATA[stand.dataset.type] || STAND_DATA.exhibitor;
+        const id = stand.dataset.id || '';
+        const status = standStatuses[id];
+        let statusText = '🟢 Available | متاح';
+        if (status === 'pending')  statusText = '🟡 Pending | قيد الانتظار';
+        if (status === 'reserved') statusText = '🔴 Reserved | محجوز';
+
+        ttHead.textContent = d.head + '  [' + id + ']';
+        ttSub.textContent  = d.sub + '  •  ' + statusText;
+        tooltip.style.left = (e.clientX + OFFSET) + 'px';
+        tooltip.style.top  = (e.clientY + OFFSET) + 'px';
+        tooltip.classList.add('show');
+      });
+      stand.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamkeen Expo 2026 — Admin Dashboard</title>
+  <style>
+    :root {
+      --primary-dark: #1e293b;
+      --gold-premium: #b8960c;
+      --gold-header: #d4af37;
+      --gold-light-bg: #fef9c3;
+      --silver-standard: #64748b;
+      --bg-color: #f1f5f9;
+      --text-main: #1e293b;
+      --text-secondary: #475569;
+      --white: #ffffff;
+      --pending-light: #fef3c7;
+      --reserved-color: #ef4444;
+      --reserved-light: #fee2e2;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      direction: ltr;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      background: var(--primary-dark);
+      color: var(--white);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .top-bar h1 { font-size: 1.15em; }
+    .top-bar a {
+      background: rgba(255,255,255,0.12);
+      color: var(--white);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .top-bar a:hover { background: rgba(255,255,255,0.22); }
+    .company-public-toggle {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 0.82em; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+      white-space: nowrap;
+    }
+    .company-public-toggle:hover { background: rgba(255,255,255,0.22); }
+    .company-public-toggle.on { background: #2563eb; border-color: #2563eb; }
+
+    /* LOADING */
+    #loadingMsg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+      font-size: 1.1em;
+    }
+
+    /* STATS */
+    .stats-row {
+      display: flex;
+      gap: 14px;
+      padding: 20px 28px 0;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 130px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .stat-card .num { font-size: 2em; font-weight: 800; }
+    .stat-card .label { font-size: 0.8em; margin-top: 2px; }
+
+    /* TABS */
+    .tab-bar {
+      display: flex;
+      padding: 0 28px;
+      border-bottom: 2px solid #e2e8f0;
+      background: var(--white);
+      margin-top: 18px;
+    }
+    .tab-btn {
+      padding: 14px 24px;
+      border: none;
+      background: none;
+      font-size: 0.95em;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--text-secondary);
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--primary-dark); border-bottom-color: var(--primary-dark); }
+    .tab-btn:hover { color: var(--primary-dark); }
+
+    /* FILTERS */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 14px 28px;
+      flex-wrap: wrap;
+      background: var(--white);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .filter-btn {
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      background: var(--white);
+      cursor: pointer;
+      font-size: 0.85em;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: var(--primary-dark);
+      color: var(--white);
+      border-color: var(--primary-dark);
+    }
+
+    /* CARDS */
+    .reservations { padding: 16px 28px 40px; }
+    .reservation-card {
+      background: var(--white);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      transition: box-shadow 0.2s;
+    }
+    .reservation-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .r-info { flex: 1; min-width: 220px; }
+    .r-name { font-weight: 700; font-size: 1.05em; }
+    .r-details { font-size: 0.85em; color: var(--text-secondary); margin-top: 4px; }
+    .r-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 6px;
+      font-size: 0.78em;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .type-sponsor   { background: var(--gold-light-bg); color: var(--gold-premium); }
+    .type-exhibitor { background: #f1f5f9; color: var(--silver-standard); }
+    .type-sponsoring{ background: #ede9fe; color: #7c3aed; }
+    .status-badge {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.78em;
+      font-weight: 700;
+      display: inline-block;
+      margin-top: 6px;
+      margin-left: 8px;
+    }
+    .s-pending   { background: var(--pending-light); color: #d97706; }
+    .s-confirmed { background: #dcfce7; color: #16a34a; }
+    .s-rejected  { background: var(--reserved-light); color: var(--reserved-color); }
+    .r-time { font-size: 0.78em; color: #94a3b8; margin-top: 4px; }
+    .r-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-sm {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .btn-confirm { background: #dcfce7; color: #16a34a; }
+    .btn-confirm:hover { background: #bbf7d0; }
+    .btn-reject  { background: var(--reserved-light); color: var(--reserved-color); }
+    .btn-reject:hover  { background: #fecaca; }
+    .btn-delete  { background: #1e293b; color: #fff; }
+    .btn-delete:hover  { background: #0f172a; }
+    .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+    .empty-msg {
+      text-align: center;
+      color: #94a3b8;
+      padding: 60px 20px;
+      font-size: 1.05em;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: var(--primary-dark);
+      color: var(--white);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95em;
+      font-weight: 600;
+      z-index: 500;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ══ MAP TAB ══════════════════════════════════════════════════ */
+    .company-toggle-btn {
+      padding: 6px 16px; background: #1e293b; color: #fff;
+      border: none; border-radius: 8px; font-size: 0.8rem;
+      cursor: pointer; transition: background .2s;
+    }
+    .company-toggle-btn.active { background: #2563eb; }
+    .company-toggle-btn:hover { opacity: 0.85; }
+    .map-container {
+      --S: 40; --m: calc(var(--S) * 1px);
+      --hall-w: calc(11 * var(--m)); --hall-h: calc(18 * var(--m));
+      --wall-border: 10px;
+      --gold-map: #d4af37; --gold-map-light: #f5e17a; --gold-map-dark: #b8960c;
+      --silver-map: #94a3b8; --silver-map-light: #cdd5e0; --silver-map-dark: #64748b;
+      --navy-map: #1e293b; --navy-map-light: #334155;
+      --bg-hall: #f8fafc;
+      --grid-minor: rgba(148,163,184,0.18); --grid-major: rgba(148,163,184,0.40);
+      --seating-bg: #e2e8f0; --gap: calc(1.5 * var(--m));
+      font-family: 'Segoe UI', system-ui, sans-serif; color: var(--navy-map);
+      display: flex; flex-direction: column; align-items: center; direction: ltr;
+    }
+    .map-container .expo-wrapper {
+      display: flex; align-items: flex-start; justify-content: center; gap: var(--gap);
+    }
+    .map-container .hall {
+      position: relative; width: var(--hall-w); height: var(--hall-h);
+      background-color: var(--bg-hall);
+      background-image:
+        linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+      background-size:
+        calc(1*var(--m)) calc(1*var(--m)), calc(1*var(--m)) calc(1*var(--m)),
+        calc(5*var(--m)) calc(5*var(--m)), calc(5*var(--m)) calc(5*var(--m));
+      border: var(--wall-border) solid var(--navy-map);
+      box-shadow: 0 8px 40px rgba(30,41,59,0.18); overflow: visible;
+    }
+    .map-container .hall-name {
+      position: absolute; bottom: calc(-1.6*var(--m)); left: 50%; transform: translateX(-50%);
+      font-size: 0.82rem; font-weight: 800; letter-spacing: 3px;
+      color: var(--navy-map); text-transform: uppercase; white-space: nowrap;
+    }
+    .map-container .dim {
+      position: absolute; font-size: 0.6rem; font-weight: 700; color: #22c55e;
+      letter-spacing: 1px; font-family: 'Consolas', monospace; pointer-events: none; z-index: 20;
+    }
+    .map-container .dim-top { top: -22px; left: 50%; transform: translateX(-50%); }
+    .map-container .dim-left { left: -38px; top: 50%; transform: translateY(-50%) rotate(-90deg); white-space: nowrap; }
+    .map-container .dim-right { right: -38px; top: 50%; transform: translateY(-50%) rotate(90deg); white-space: nowrap; }
+    .map-container .aisle {
+      position: absolute; top: 0; height: 100%;
+      background: rgba(148,163,184,0.06);
+      border-left: 1px dashed rgba(148,163,184,0.28);
+      border-right: 1px dashed rgba(148,163,184,0.28);
+      pointer-events: none; z-index: 0;
+    }
+    .map-container .aisle-left { left: calc(2*var(--m)); width: calc(1.5*var(--m)); }
+    .map-container .aisle-right { left: calc(7.5*var(--m)); width: calc(1.5*var(--m)); }
+    .map-container .stand {
+      position: absolute; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-radius: 4px; cursor: default; z-index: 2;
+      -webkit-user-select: none; user-select: none;
+    }
+    .map-container .stand .s-label {
+      font-size: 0.65rem; font-weight: 700; color: var(--navy-map);
+      pointer-events: none; line-height: 1;
+    }
+    .map-container .stand .s-status {
+      font-size: 0.42rem; font-weight: 700; color: #fff;
+      pointer-events: none; line-height: 1; margin-top: 2px;
+    }
+    .map-container .stand.exhibitor {
+      background: linear-gradient(160deg, var(--silver-map-light) 0%, var(--silver-map) 55%, var(--silver-map-dark) 100%);
+      border: 1.5px solid var(--silver-map-dark);
+    }
+    .map-container .stand.sponsor {
+      background: linear-gradient(160deg, var(--gold-map-light) 0%, var(--gold-map) 55%, var(--gold-map-dark) 100%);
+      border: 1.5px solid var(--gold-map-dark);
+    }
+    .map-container .stand.status-pending {
+      background: linear-gradient(160deg, #fef3c7 0%, #f59e0b 55%, #d97706 100%) !important;
+      border-color: #d97706 !important;
+    }
+    .map-container .stand.status-reserved {
+      background: linear-gradient(160deg, #fecaca 0%, #ef4444 55%, #dc2626 100%) !important;
+      border-color: #dc2626 !important;
+    }
+    .map-container .stand.status-pending .s-label,
+    .map-container .stand.status-reserved .s-label { color: #fff; }
+    .map-container .conf-space {
+      position: absolute; left: 0; top: 0; width: 100%; height: calc(6*var(--m));
+      background: var(--seating-bg); border-bottom: 2px dashed var(--silver-map);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; color: var(--navy-map-light);
+      text-align: center; line-height: 1.6; z-index: 2; pointer-events: none;
+    }
+    .map-container .zone-tag {
+      position: absolute; right: calc(0.3*var(--m));
+      font-size: 0.48rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: rgba(100,116,139,0.7);
+      pointer-events: none; z-index: 20;
+    }
+    .map-container .door-break { position: absolute; background: #f1f5f9; z-index: 6; pointer-events: none; }
+    .map-container .door-arc { position: absolute; border: 1.5px dashed rgba(30,41,59,0.28); pointer-events: none; z-index: 3; }
+    .map-container .door-label {
+      position: absolute; font-size: 0.46rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--silver-map-dark); pointer-events: none; z-index: 7; white-space: nowrap;
+    }
+    .map-container .rh-door-break { left: calc(-1*var(--wall-border) - 1px); top: 300px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .map-container .rh-door-label { left: -38px; top: 354px; transform: rotate(-90deg); }
+    .map-container .rh-arc-top { left: 0; top: 300px; width: 60px; height: 60px; border-top: none; border-left: none; border-bottom-right-radius: 60px; }
+    .map-container .rh-arc-bot { left: 0; top: 360px; width: 60px; height: 60px; border-bottom: none; border-left: none; border-top-right-radius: 60px; }
+    .map-container .lh-door-break { right: calc(-1*var(--wall-border) - 1px); top: 500px; width: calc(var(--wall-border) + 2px); height: 120px; }
+    .map-container .lh-door-label { right: -38px; top: 554px; transform: rotate(90deg); }
+    .map-container .lh-arc-top { right: 0; top: 500px; width: 60px; height: 60px; border-top: none; border-right: none; border-bottom-left-radius: 60px; }
+    .map-container .lh-arc-bot { right: 0; top: 560px; width: 60px; height: 60px; border-bottom: none; border-right: none; border-top-left-radius: 60px; }
+    .map-container .hallway {
+      position: relative; height: calc(var(--hall-h) + 2*var(--wall-border)); width: var(--gap);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; padding-bottom: calc(1*var(--m));
+    }
+    .map-container .hallway-floor {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent calc(var(--m) - 1px),
+        rgba(148,163,184,0.08) calc(var(--m) - 1px), rgba(148,163,184,0.08) var(--m)
+      );
+      border-left: 2px dashed rgba(148,163,184,0.28);
+      border-right: 2px dashed rgba(148,163,184,0.28);
+    }
+    .map-container .hallway-cl {
+      position: absolute; inset: 0; left: 50%; width: 2px;
+      background: repeating-linear-gradient(180deg,
+        var(--silver-map-dark) 0, var(--silver-map-dark) 8px, transparent 8px, transparent 18px);
+      opacity: 0.22;
+    }
+    .map-container .h-conn {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: repeating-linear-gradient(90deg,
+        rgba(30,41,59,0.22) 0, rgba(30,41,59,0.22) 6px, transparent 6px, transparent 12px);
+    }
+    .map-container .h-conn-rh { top: 360px; }
+    .map-container .h-conn-lh { top: 560px; }
+    .map-container .entrance {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .map-container .entrance-arch {
+      width: 80px; height: 40px;
+      border: 2px dashed rgba(30,41,59,0.28); border-bottom: none;
+      border-radius: 50px 50px 0 0; margin-bottom: 5px;
+    }
+    .map-container .entrance-label {
+      font-size: 0.55rem; font-weight: 800;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--navy-map);
+    }
+    .map-container .legend {
+      margin-top: 28px; background: #fff; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 12px 24px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 20px;
+      box-shadow: 0 2px 8px rgba(30,41,59,0.07); direction: ltr;
+    }
+    .map-container .legend-title { font-size: 0.68rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--navy-map); }
+    .map-container .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--navy-map-light); }
+    .map-container .lg-sw { width: 26px; height: 15px; border-radius: 3px; flex-shrink: 0; }
+    .map-container .lg-gold { background: linear-gradient(135deg,var(--gold-map-light),var(--gold-map-dark)); border:1px solid var(--gold-map-dark); }
+    .map-container .lg-silver { background: linear-gradient(135deg,var(--silver-map-light),var(--silver-map-dark)); border:1px solid var(--silver-map-dark); }
+    .map-container .lg-pending { background: linear-gradient(135deg,#fef3c7,#d97706); border:1px solid #d97706; }
+    .map-container .lg-reserved { background: linear-gradient(135deg,#fecaca,#dc2626); border:1px solid #dc2626; }
+
+    @media (max-width: 600px) {
+      .stats-row, .tab-bar, .filter-bar, .reservations { padding-left: 14px; padding-right: 14px; }
+      .reservation-card { flex-direction: column; align-items: stretch; }
+      .r-actions { justify-content: flex-end; }
+      .top-bar { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h1>📊 لوحة تحكم المعرض — Tamkeen Expo 2026</h1>
+    <button id="publicCompanyToggle" class="company-public-toggle">⏳ جاري التحميل...</button>
+    <a href="/">← الموقع الرئيسي</a>
+  </div>
+
+  <div id="loadingMsg">⏳ جاري تحميل البيانات...</div>
+
+  <div id="mainContent" style="display:none;">
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="stands">🏢 أجنحة المعرض</button>
+      <button class="tab-btn" data-tab="sponsors">⭐ طلبات الرعاية</button>
+      <button class="tab-btn" data-tab="map">🗺️ خريطة المعرض</button>
+    </div>
+
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-btn active" data-filter="all">الكل</button>
+      <button class="filter-btn" data-filter="pending">⏳ قيد الانتظار</button>
+      <button class="filter-btn" data-filter="confirmed">✅ مؤكد</button>
+      <button class="filter-btn" data-filter="rejected">❌ مرفوض</button>
+    </div>
+
+    <div class="reservations" id="reservationsList"></div>
+
+    <!-- MAP TAB -->
+    <div id="mapSection" style="display:none;padding:20px 28px;direction:ltr;">
+      <div style="display:flex;align-items:center;justify-content:space-between;max-width:980px;margin:0 auto 16px;direction:rtl;">
+        <strong style="font-size:1em;color:#1e293b;">🗺️ خريطة المعرض — Vue plan des stands</strong>
+        <button id="adminCompanyToggleBtn" class="company-toggle-btn">👁 أسماء الشركات</button>
+      </div>
+      <div class="map-container">
+        <div class="expo-wrapper">
+          <!-- LEFT HALL -->
+          <div class="hall">
+            <span class="dim dim-top">11m</span>
+            <span class="dim dim-left">18m</span>
+            <span class="zone-tag" style="top:10px;">Zone A : Conférence</span>
+            <span class="zone-tag" style="top:255px;">Zone B : Exposition</span>
+            <div class="aisle aisle-left"></div>
+            <div class="aisle aisle-right"></div>
+            <div class="conf-space">ESPACE CONFÉRENCE<br>مساحة المؤتمرات</div>
+            <div class="stand exhibitor" style="left:0;top:260px;width:80px;height:100px;" data-id="A1"><span class="s-label">A1</span></div>
+            <div class="stand exhibitor" style="left:0;top:360px;width:80px;height:100px;" data-id="A2"><span class="s-label">A2</span></div>
+            <div class="stand exhibitor" style="left:0;top:460px;width:80px;height:100px;" data-id="A3"><span class="s-label">A3</span></div>
+            <div class="stand sponsor" style="left:140px;top:260px;width:160px;height:100px;" data-id="S1"><span class="s-label">S1</span></div>
+            <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-id="A4"><span class="s-label">A4</span></div>
+            <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;" data-id="A5"><span class="s-label">A5</span></div>
+            <div class="stand sponsor" style="left:140px;top:460px;width:160px;height:100px;" data-id="S2"><span class="s-label">S2</span></div>
+            <div class="stand exhibitor" style="left:360px;top:300px;width:80px;height:100px;" data-id="A6"><span class="s-label">A6</span></div>
+            <div class="stand exhibitor" style="left:360px;top:400px;width:80px;height:100px;" data-id="A7"><span class="s-label">A7</span></div>
+            <div class="stand exhibitor" style="left:5px;top:640px;width:100px;height:80px;" data-id="A9"><span class="s-label">A9</span></div>
+            <div class="stand exhibitor" style="left:113px;top:640px;width:100px;height:80px;" data-id="A10"><span class="s-label">A10</span></div>
+            <div class="stand exhibitor" style="left:221px;top:640px;width:100px;height:80px;" data-id="A11"><span class="s-label">A11</span></div>
+            <div class="stand exhibitor" style="left:329px;top:640px;width:100px;height:80px;" data-id="A8"><span class="s-label">A8</span></div>
+            <div class="door-break lh-door-break"></div>
+            <span class="door-label lh-door-label">PORTE | باب</span>
+            <div class="door-arc lh-arc-top"></div>
+            <div class="door-arc lh-arc-bot"></div>
+            <span class="hall-name">HALL GAUCHE | القاعة اليسرى</span>
+          </div>
+          <!-- HALLWAY -->
+          <div class="hallway">
+            <div class="hallway-floor"></div>
+            <div class="hallway-cl"></div>
+            <div class="h-conn h-conn-rh"></div>
+            <div class="h-conn h-conn-lh"></div>
+            <div class="entrance">
+              <div class="entrance-arch"></div>
+              <span class="entrance-label">ENTRÉE | المدخل</span>
+            </div>
+          </div>
+          <!-- RIGHT HALL -->
+          <div class="hall">
+            <span class="dim dim-top">11m</span>
+            <span class="dim dim-right">18m</span>
+            <div class="aisle aisle-left"></div>
+            <div class="aisle aisle-right"></div>
+            <div class="stand exhibitor" style="left:90px;top:0;width:100px;height:80px;" data-id="B1"><span class="s-label">B1</span></div>
+            <div class="stand exhibitor" style="left:195px;top:0;width:100px;height:80px;" data-id="B2"><span class="s-label">B2</span></div>
+            <div class="stand exhibitor" style="left:300px;top:0;width:100px;height:80px;" data-id="B3"><span class="s-label">B3</span></div>
+            <div class="stand exhibitor" style="left:0;top:100px;width:80px;height:100px;" data-id="B4"><span class="s-label">B4</span></div>
+            <div class="stand exhibitor" style="left:0;top:200px;width:80px;height:100px;" data-id="B5"><span class="s-label">B5</span></div>
+            <div class="stand exhibitor" style="left:0;top:420px;width:80px;height:100px;" data-id="B6"><span class="s-label">B6</span></div>
+            <div class="stand exhibitor" style="left:0;top:520px;width:80px;height:100px;" data-id="B7"><span class="s-label">B7</span></div>
+            <div class="stand sponsor" style="left:140px;top:160px;width:160px;height:100px;" data-id="S3"><span class="s-label">S3</span></div>
+            <div class="stand exhibitor" style="left:140px;top:260px;width:80px;height:100px;" data-id="B8"><span class="s-label">B8</span></div>
+            <div class="stand exhibitor" style="left:220px;top:260px;width:80px;height:100px;" data-id="B9"><span class="s-label">B9</span></div>
+            <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-id="B10"><span class="s-label">B10</span></div>
+            <div class="stand exhibitor" style="left:220px;top:360px;width:80px;height:100px;" data-id="B11"><span class="s-label">B11</span></div>
+            <div class="stand sponsor" style="left:140px;top:460px;width:160px;height:100px;" data-id="S4"><span class="s-label">S4</span></div>
+            <div class="stand exhibitor" style="left:360px;top:110px;width:80px;height:100px;" data-id="B12"><span class="s-label">B12</span></div>
+            <div class="stand exhibitor" style="left:360px;top:210px;width:80px;height:100px;" data-id="B13"><span class="s-label">B13</span></div>
+            <div class="stand exhibitor" style="left:360px;top:310px;width:80px;height:100px;" data-id="B14"><span class="s-label">B14</span></div>
+            <div class="stand exhibitor" style="left:360px;top:410px;width:80px;height:100px;" data-id="B15"><span class="s-label">B15</span></div>
+            <div class="stand exhibitor" style="left:360px;top:510px;width:80px;height:100px;" data-id="B16"><span class="s-label">B16</span></div>
+            <div class="stand exhibitor" style="left:90px;top:640px;width:100px;height:80px;" data-id="B17"><span class="s-label">B17</span></div>
+            <div class="stand exhibitor" style="left:195px;top:640px;width:100px;height:80px;" data-id="B18"><span class="s-label">B18</span></div>
+            <div class="stand exhibitor" style="left:300px;top:640px;width:100px;height:80px;" data-id="B19"><span class="s-label">B19</span></div>
+            <div class="door-break rh-door-break"></div>
+            <span class="door-label rh-door-label">PORTE | باب</span>
+            <div class="door-arc rh-arc-top"></div>
+            <div class="door-arc rh-arc-bot"></div>
+            <span class="hall-name">HALL DROIT | القاعة اليمنى</span>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="legend-title">Légende | مفتاح المخطط</span>
+          <div class="legend-item"><div class="lg-sw lg-gold"></div>Sponsor | راعي — 10 m²</div>
+          <div class="legend-item"><div class="lg-sw lg-silver"></div>Exposant | عارض — 5 m²</div>
+          <div class="legend-item"><div class="lg-sw lg-pending"></div>En attente | قيد الانتظار</div>
+          <div class="legend-item"><div class="lg-sw lg-reserved"></div>Réservé | محجوز</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const PROJECT_ID = 'tamkeen-expo-2026';
+    const API_KEY    = 'AIzaSyCQ4x1IWLo1L-o8WJ0c0mNGfmX-nN2s-qg';
+    const BASE_URL   = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID + '/databases/default/documents';
+
+    let allReservations = [];
+    let currentTab    = 'stands';
+    let currentFilter = 'all';
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function esc(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function getField(fields, key) {
+      const f = fields && fields[key];
+      if (!f) return null;
+      return f.stringValue ?? f.integerValue ?? f.booleanValue ?? (f.nullValue !== undefined ? null : null);
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return '';
+      try {
+        const d = new Date(ts);
+        return d.toLocaleDateString('fr-DZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      } catch { return ''; }
+    }
+
+    // ── Load data via REST (no SDK) ───────────────────────────────
+    async function loadData() {
+      try {
+        const res = await fetch(BASE_URL + '/reservations?key=' + API_KEY + '&pageSize=300');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const docs = data.documents || [];
+
+        allReservations = docs.map(doc => {
+          const id = doc.name.split('/').pop();
+          const f  = doc.fields || {};
+          return {
+            id,
+            standId:   getField(f, 'standId'),
+            type:      getField(f, 'type'),
+            tier:      getField(f, 'tier'),
+            name:      getField(f, 'name'),
+            company:   getField(f, 'company'),
+            phone:     getField(f, 'phone'),
+            email:     getField(f, 'email'),
+            status:    getField(f, 'status') || 'pending',
+            timestamp: getField(f, 'timestamp') || (doc.createTime)
+          };
+        }).filter(r => r.status !== 'cancelled');
+
+        // Sort newest first
+        allReservations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('mainContent').style.display = '';
+        renderStats();
+        render();
+        updateAdminMapColors();
+      } catch (err) {
+        document.getElementById('loadingMsg').textContent = '❌ خطأ في التحميل: ' + err.message;
+      }
+    }
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    document.querySelector('.tab-bar').addEventListener('click', e => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      currentTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (currentTab === 'map') {
+        document.getElementById('filterBar').style.display = 'none';
+        document.getElementById('reservationsList').style.display = 'none';
+        document.getElementById('mapSection').style.display = '';
+        updateAdminMapColors();
+      } else {
+        document.getElementById('filterBar').style.display = '';
+        document.getElementById('reservationsList').style.display = '';
+        document.getElementById('mapSection').style.display = 'none';
+        render();
+      }
+    });
+
+    // ── Filters ───────────────────────────────────────────────────
+    document.getElementById('filterBar').addEventListener('click', e => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      currentFilter = btn.dataset.filter;
+      document.querySelectorAll('#filterBar .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    });
+
+    // ── Confirm / Reject ──────────────────────────────────────────
+    document.getElementById('reservationsList').addEventListener('click', async e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const docId  = btn.dataset.docId;
+      btn.disabled = true;
+
+      if (action === 'delete') {
+        if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً؟')) { btn.disabled = false; return; }
+        const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
+                    '&updateMask.fieldPaths=status';
+        try {
+          const res = await fetch(url, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { status: { stringValue: 'cancelled' } } })
+          });
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
+          }
+          showToast('🗑️ تم حذف الحجز');
+          allReservations = allReservations.filter(r => r.id !== docId);
+          renderStats();
+          render();
+        } catch (err) {
+          showToast('❌ خطأ: ' + err.message);
+          btn.disabled = false;
+        }
+        return;
+      }
+
+      const newStatus = action === 'confirm' ? 'confirmed' : 'rejected';
+      const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
+                  '&updateMask.fieldPaths=status';
+
+      try {
+        const res = await fetch(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { status: { stringValue: newStatus } } })
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
+        }
+
+        showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : '❌ تم رفض الطلب');
+        // Update local copy
+        const r = allReservations.find(r => r.id === docId);
+        if (r) r.status = newStatus;
+        renderStats();
+        render();
+      } catch (err) {
+        showToast('❌ خطأ: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+
+    // ── Render Stats ──────────────────────────────────────────────
+    function renderStats() {
+      const el        = document.getElementById('statsRow');
+      const pending   = allReservations.filter(r => r.status === 'pending').length;
+      const confirmed = allReservations.filter(r => r.status === 'confirmed').length;
+      const rejected  = allReservations.filter(r => r.status === 'rejected').length;
+      const stands    = allReservations.filter(r => r.type !== 'sponsoring').length;
+      const sponsors  = allReservations.filter(r => r.type === 'sponsoring').length;
+
+      el.innerHTML = [
+        ['#fef3c7','#d97706','#92400e', pending,   '⏳ قيد الانتظار'],
+        ['#dcfce7','#16a34a','#166534', confirmed, '✅ مؤكد'],
+        ['#fee2e2','#ef4444','#991b1b', rejected,  '❌ مرفوض'],
+        ['#ede9fe','#7c3aed','#5b21b6', sponsors,  '⭐ رعاة'],
+        ['#f1f5f9','#1e293b','#475569', stands,    '🏢 أجنحة']
+      ].map(([bg, num, lbl, val, text]) =>
+        '<div class="stat-card" style="background:' + bg + ';">' +
+          '<div class="num" style="color:' + num + ';">' + val + '</div>' +
+          '<div class="label" style="color:' + lbl + ';">' + text + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    // ── Render List ───────────────────────────────────────────────
+    function render() {
+      const container = document.getElementById('reservationsList');
+      let list = allReservations;
+
+      if (currentTab === 'stands')   list = list.filter(r => r.type !== 'sponsoring');
+      else                           list = list.filter(r => r.type === 'sponsoring');
+
+      if (currentFilter !== 'all')   list = list.filter(r => r.status === currentFilter);
+
+      if (!list.length) {
+        const msg = currentTab === 'stands'
+          ? '🏢 لا توجد حجوزات أجنحة بعد'
+          : '⭐ لا توجد طلبات رعاية بعد';
+        container.innerHTML = '<div class="empty-msg">' + msg + '</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(r => {
+        const standLabel = r.standId
+          ? esc(r.standId) + ' (' + esc(r.type) + ')'
+          : r.tier === 'officiel' ? 'Sponsor Officiel — 180,000 د.ج' : 'Sponsor Standard — 50,000 د.ج';
+        const typeClass  = r.type === 'sponsoring' ? 'type-sponsoring' : ('type-' + r.type);
+        const statusLabel = r.status === 'pending' ? '⏳ قيد الانتظار'
+          : r.status === 'confirmed' ? '✅ مؤكد' : '❌ مرفوض';
+        const border = r.status === 'pending' ? '#f59e0b' : r.status === 'confirmed' ? '#22c55e' : '#ef4444';
+
+        return '<div class="reservation-card" style="border-left:4px solid ' + border + ';">' +
+          '<div class="r-info">' +
+            '<div class="r-name">' + esc(r.name) + (r.company ? ' — ' + esc(r.company) : '') + '</div>' +
+            '<div class="r-details">📞 ' + esc(r.phone) + ' &nbsp;|&nbsp; 📧 ' + esc(r.email) + '</div>' +
+            '<span class="r-badge ' + typeClass + '">' + standLabel + '</span>' +
+            '<span class="status-badge s-' + r.status + '">' + statusLabel + '</span>' +
+            (r.timestamp ? '<div class="r-time">' + fmtTime(r.timestamp) + '</div>' : '') +
+          '</div>' +
+          '<div class="r-actions">' +
+            (r.status === 'pending'
+              ? '<button class="btn-sm btn-confirm" data-action="confirm" data-doc-id="' + esc(r.id) + '">✓ تأكيد</button>' +
+                '<button class="btn-sm btn-reject"  data-action="reject"  data-doc-id="' + esc(r.id) + '">✗ رفض</button>'
+              : '') +
+            (r.status === 'rejected'
+              ? '<button class="btn-sm btn-delete" data-action="delete" data-doc-id="' + esc(r.id) + '">🗑 حذف</button>'
+              : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ── Auto-refresh every 30s ────────────────────────────────────
+    let adminShowCompany = false;
+
+    const SETTINGS_URL = BASE_URL + '/settings/mapDisplay?key=' + API_KEY;
+
+    async function loadPublicSetting() {
+      try {
+        const res = await fetch(SETTINGS_URL);
+        if (res.status === 404) return;
+        if (!res.ok) return;
+        const data = await res.json();
+        const val = data.fields && data.fields.showCompanyNames && data.fields.showCompanyNames.booleanValue;
+        updatePublicToggleBtn(!!val);
+      } catch (e) {}
+    }
+
+    function updatePublicToggleBtn(isOn) {
+      const btn = document.getElementById('publicCompanyToggle');
+      btn.textContent = isOn ? '🙈 أسماء الشركات ظاهرة للعموم — إخفاء' : '👁 إظهار أسماء الشركات للعموم';
+      btn.classList.toggle('on', isOn);
+    }
+
+    document.getElementById('publicCompanyToggle').addEventListener('click', async function() {
+      const isCurrentlyOn = this.classList.contains('on');
+      const newVal = !isCurrentlyOn;
+      this.disabled = true;
+      try {
+        const res = await fetch(SETTINGS_URL + '&updateMask.fieldPaths=showCompanyNames', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { showCompanyNames: { booleanValue: newVal } } })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        updatePublicToggleBtn(newVal);
+        showToast(newVal ? '👁 تم إظهار أسماء الشركات في الموقع العام' : '🙈 تم إخفاء أسماء الشركات من الموقع العام');
+      } catch (err) {
+        showToast('❌ خطأ: ' + err.message);
+      }
+      this.disabled = false;
+    });
+
+    loadData();
+    loadPublicSetting();
+    setInterval(loadData, 30000);
+
+    function updateAdminMapColors() {
+      const standStatuses = {};
+      const standCompanies = {};
+      allReservations.forEach(r => {
+        if (!r.standId || r.status === 'rejected' || r.status === 'cancelled') return;
+        if (!standStatuses[r.standId] || r.status === 'confirmed') {
+          standStatuses[r.standId] = r.status === 'confirmed' ? 'reserved' : 'pending';
+          standCompanies[r.standId] = r.company || '';
+        }
+      });
+      document.querySelectorAll('#mapSection .stand').forEach(stand => {
+        const id = stand.dataset.id;
+        stand.classList.remove('status-pending', 'status-reserved');
+        const old = stand.querySelector('.s-status');
+        if (old) old.remove();
+        const status = standStatuses[id];
+        if (status === 'pending') {
+          stand.classList.add('status-pending');
+          const el = document.createElement('span');
+          el.className = 's-status';
+          el.textContent = (adminShowCompany && standCompanies[id]) ? standCompanies[id] : 'قيد الانتظار';
+          stand.appendChild(el);
+        } else if (status === 'reserved') {
+          stand.classList.add('status-reserved');
+          const el = document.createElement('span');
+          el.className = 's-status';
+          el.textContent = (adminShowCompany && standCompanies[id]) ? standCompanies[id] : 'محجوز';
+          stand.appendChild(el);
+        }
+      });
+    }
+
+    document.getElementById('adminCompanyToggleBtn').addEventListener('click', function() {
+      adminShowCompany = !adminShowCompany;
+      this.classList.toggle('active', adminShowCompany);
+      this.textContent = adminShowCompany ? '🙈 إخفاء الأسماء' : '👁 أسماء الشركات';
+      updateAdminMapColors();
+    });
+
+  })();
+  </script>
+
+</body>
+</html>
