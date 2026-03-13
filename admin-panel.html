@@ -540,6 +540,11 @@
     let allReservations = [];
     let currentTab    = 'stands';
     let currentFilter = 'all';
+    const ADMIN_POLL_MS = 120000;
+    const ADMIN_BACKOFF_MS = 15 * 60 * 1000;
+    let adminPollTimer = null;
+    let isAdminBackoffActive = false;
+    let adminQuotaNoticeShown = false;
 
     // ── Helpers ──────────────────────────────────────────────────
     function esc(s) {
@@ -571,9 +576,14 @@
     }
 
     // ── Load data via REST (no SDK) ───────────────────────────────
-    async function loadData() {
+    async function loadData(forceWhenHidden = false) {
+      if (document.hidden && !forceWhenHidden) return;
       try {
         const res = await fetch(BASE_URL + '/reservations?key=' + API_KEY + '&pageSize=300');
+        if (res.status === 429) {
+          activateAdminQuotaBackoff();
+          return;
+        }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const docs = data.documents || [];
@@ -600,6 +610,7 @@
 
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('mainContent').style.display = '';
+        adminQuotaNoticeShown = false;
         renderStats();
         render();
         updateAdminMapColors();
@@ -779,6 +790,7 @@
     async function loadPublicSetting() {
       try {
         const res = await fetch(SETTINGS_URL);
+        if (res.status === 429) return;
         if (res.status === 404) return; // not set yet
         if (!res.ok) return;
         const data = await res.json();
@@ -812,9 +824,39 @@
       this.disabled = false;
     });
 
-    loadData();
+    function startAdminPolling() {
+      if (adminPollTimer) clearInterval(adminPollTimer);
+      adminPollTimer = setInterval(loadData, ADMIN_POLL_MS);
+    }
+
+    function activateAdminQuotaBackoff() {
+      if (isAdminBackoffActive) return;
+      isAdminBackoffActive = true;
+      if (adminPollTimer) clearInterval(adminPollTimer);
+      if (!adminQuotaNoticeShown) {
+        adminQuotaNoticeShown = true;
+        showToast('⚠️ تم تجاوز حد Firestore مؤقتاً. سنعيد المحاولة تلقائياً بعد قليل.');
+      }
+      const loadingEl = document.getElementById('loadingMsg');
+      loadingEl.style.display = '';
+      loadingEl.textContent = '⚠️ تم تجاوز الحد المسموح مؤقتاً (HTTP 429). إعادة المحاولة تلقائياً بعد 15 دقيقة.';
+      setTimeout(() => {
+        isAdminBackoffActive = false;
+        loadData(true);
+        startAdminPolling();
+      }, ADMIN_BACKOFF_MS);
+    }
+
+    loadData(true);
     loadPublicSetting();
-    setInterval(loadData, 30000);
+    startAdminPolling();
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !isAdminBackoffActive) {
+        loadData(true);
+        loadPublicSetting();
+      }
+    });
 
     function updateAdminMapColors() {
       const standStatuses = {};

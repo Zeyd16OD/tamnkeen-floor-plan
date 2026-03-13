@@ -1085,6 +1085,13 @@
     let showCompanyNames = false;
     let allReservations = [];
     let currentReservation = { standId: null, type: null, tier: null };
+    const PUBLIC_STATUS_POLL_MS = 120000;
+    const PUBLIC_SETTING_POLL_MS = 600000;
+    const QUOTA_BACKOFF_MS = 15 * 60 * 1000;
+    let standPollTimer = null;
+    let settingPollTimer = null;
+    let isQuotaBackoffActive = false;
+    let quotaNoticeShown = false;
 
     /* ===========================================================
        HELPERS
@@ -1266,9 +1273,15 @@
     }
 
     async function pollStandStatuses() {
+      if (document.hidden) return;
       try {
         const res = await fetch(FS_BASE + '/reservations?key=' + API_KEY + '&pageSize=300');
+        if (res.status === 429) {
+          activateQuotaBackoff();
+          return;
+        }
         if (!res.ok) return;
+        quotaNoticeShown = false;
         const data = await res.json();
         const docs = data.documents || [];
 
@@ -1292,19 +1305,57 @@
     }
 
     async function fetchPublicSetting() {
+      if (document.hidden) return;
       try {
         const res = await fetch(FS_BASE + '/settings/mapDisplay?key=' + API_KEY);
+        if (res.status === 429) {
+          activateQuotaBackoff();
+          return;
+        }
+        if (res.status === 404) return;
         if (!res.ok) return;
         const data = await res.json();
         const val = data.fields && data.fields.showCompanyNames && data.fields.showCompanyNames.booleanValue;
         showCompanyNames = !!val;
+        quotaNoticeShown = false;
+        updateStandColors();
       } catch (e) {}
+    }
+
+    function activateQuotaBackoff() {
+      if (isQuotaBackoffActive) return;
+      isQuotaBackoffActive = true;
+      if (!quotaNoticeShown) {
+        quotaNoticeShown = true;
+        showToast('⚠️ ضغط مرتفع على قاعدة البيانات. سيتم إعادة المحاولة تلقائياً بعد قليل.');
+      }
+      if (standPollTimer) clearInterval(standPollTimer);
+      if (settingPollTimer) clearInterval(settingPollTimer);
+      setTimeout(() => {
+        isQuotaBackoffActive = false;
+        pollStandStatuses();
+        fetchPublicSetting();
+        startPublicPolling();
+      }, QUOTA_BACKOFF_MS);
+    }
+
+    function startPublicPolling() {
+      if (standPollTimer) clearInterval(standPollTimer);
+      if (settingPollTimer) clearInterval(settingPollTimer);
+      standPollTimer = setInterval(pollStandStatuses, PUBLIC_STATUS_POLL_MS);
+      settingPollTimer = setInterval(fetchPublicSetting, PUBLIC_SETTING_POLL_MS);
     }
 
     pollStandStatuses();
     fetchPublicSetting();
-    setInterval(pollStandStatuses, 20000);
-    setInterval(fetchPublicSetting, 20000);
+    startPublicPolling();
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !isQuotaBackoffActive) {
+        pollStandStatuses();
+        fetchPublicSetting();
+      }
+    });
 
     function updateStandColors() {
       document.querySelectorAll('.stand').forEach(stand => {
