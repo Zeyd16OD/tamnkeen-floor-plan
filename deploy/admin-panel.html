@@ -658,6 +658,10 @@
       const docId  = btn.dataset.docId;
       btn.disabled = true;
 
+      if (action === 'cancel') {
+        if (!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) { btn.disabled = false; return; }
+      }
+
       if (action === 'delete') {
         if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً؟')) { btn.disabled = false; return; }
         const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
@@ -699,7 +703,7 @@
           throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
         }
 
-        showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : '❌ تم رفض الطلب');
+        showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : (action === 'cancel' ? '❌ تم إلغاء الحجز' : '❌ تم رفض الطلب'));
         // Update local copy
         const r = allReservations.find(r => r.id === docId);
         if (r) r.status = newStatus;
@@ -773,6 +777,9 @@
             (r.status === 'pending'
               ? '<button class="btn-sm btn-confirm" data-action="confirm" data-doc-id="' + esc(r.id) + '">✓ تأكيد</button>' +
                 '<button class="btn-sm btn-reject"  data-action="reject"  data-doc-id="' + esc(r.id) + '">✗ رفض</button>'
+              : '') +
+            (r.status === 'confirmed'
+              ? '<button class="btn-sm btn-reject" data-action="cancel" data-doc-id="' + esc(r.id) + '">✗ إلغاء الحجز</button>'
               : '') +
             (r.status === 'rejected'
               ? '<button class="btn-sm btn-delete" data-action="delete" data-doc-id="' + esc(r.id) + '">🗑 حذف</button>'
