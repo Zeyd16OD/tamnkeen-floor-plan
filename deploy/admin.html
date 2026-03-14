@@ -444,7 +444,7 @@
       render();
     });
 
-    // === ACTIONS (Confirm / Reject) ===
+    // === ACTIONS (Confirm / Reject / Cancel) ===
     document.getElementById('reservationsList').addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -453,11 +453,20 @@
       const docId = btn.dataset.docId;
       btn.disabled = true;
 
+      if (action === 'cancel') {
+        if (!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) { btn.disabled = false; return; }
+      }
+
+      const newStatus = action === 'confirm' ? 'confirmed' : 'rejected';
+
       try {
         await db.collection('reservations').doc(docId).update({
-          status: action === 'confirm' ? 'confirmed' : 'rejected'
+          status: newStatus
         });
-        showToast(action === 'confirm' ? '✅ Reservation confirmed — تم التأكيد' : '❌ Reservation rejected — تم الرفض');
+        showToast(
+          action === 'confirm' ? '✅ Reservation confirmed — تم التأكيد' :
+          (action === 'cancel' ? '❌ Reservation cancelled — تم الإلغاء' : '❌ Reservation rejected — تم الرفض')
+        );
       } catch (err) {
         showToast('Error: ' + err.message);
         btn.disabled = false;
@@ -558,6 +567,9 @@
             (r.status === 'pending'
               ? '<button class="btn-sm btn-confirm" data-action="confirm" data-doc-id="' + esc(r.id) + '">✓ تأكيد</button>' +
                 '<button class="btn-sm btn-reject" data-action="reject" data-doc-id="' + esc(r.id) + '">✗ رفض</button>'
+              : '') +
+            (r.status === 'confirmed'
+              ? '<button class="btn-sm btn-reject" style="background:#ef4444; color:white;" data-action="cancel" data-doc-id="' + esc(r.id) + '">✗ إلغاء الحجز</button>'
               : '') +
           '</div>' +
         '</div>';
