@@ -196,6 +196,8 @@
     .btn-confirm:hover { background: #bbf7d0; }
     .btn-reject  { background: var(--reserved-light); color: var(--reserved-color); }
     .btn-reject:hover  { background: #fecaca; }
+    .btn-cancel  { background: #fff7ed; color: #c2410c; }
+    .btn-cancel:hover  { background: #ffedd5; }
     .btn-delete  { background: #1e293b; color: #fff; }
     .btn-delete:hover  { background: #0f172a; }
     .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -658,12 +660,9 @@
       const docId  = btn.dataset.docId;
       btn.disabled = true;
 
-      if (action === 'cancel') {
-        if (!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) { btn.disabled = false; return; }
-      }
-
-      if (action === 'delete') {
-        if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً؟')) { btn.disabled = false; return; }
+      if (action === 'delete' || action === 'cancel') {
+        const isCancel = action === 'cancel';
+        if (!confirm(isCancel ? 'هل أنت متأكد من إلغاء هذا الحجز المؤكد؟' : 'هل أنت متأكد من حذف هذا الحجز نهائياً؟')) { btn.disabled = false; return; }
         const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
                     '&updateMask.fieldPaths=status';
         try {
@@ -676,10 +675,11 @@
             const errBody = await res.json().catch(() => ({}));
             throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
           }
-          showToast('🗑️ تم حذف الحجز');
+          showToast(isCancel ? '↩️ تم إلغاء الحجز وأصبح الجناح متاحاً' : '🗑️ تم حذف الحجز');
           allReservations = allReservations.filter(r => r.id !== docId);
           renderStats();
           render();
+          updateAdminMapColors();
         } catch (err) {
           showToast('❌ خطأ: ' + err.message);
           btn.disabled = false;
@@ -687,7 +687,10 @@
         return;
       }
 
-      const newStatus = action === 'confirm' ? 'confirmed' : 'rejected';
+      let newStatus;
+      if (action === 'confirm') newStatus = 'confirmed';
+      else if (action === 'reject') newStatus = 'rejected';
+      else return;
       const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
                   '&updateMask.fieldPaths=status';
 
@@ -703,12 +706,13 @@
           throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
         }
 
-        showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : (action === 'cancel' ? '❌ تم إلغاء الحجز' : '❌ تم رفض الطلب'));
+        showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : '❌ تم رفض الطلب');
         // Update local copy
         const r = allReservations.find(r => r.id === docId);
         if (r) r.status = newStatus;
         renderStats();
         render();
+        updateAdminMapColors();
       } catch (err) {
         showToast('❌ خطأ: ' + err.message);
         btn.disabled = false;
@@ -779,7 +783,7 @@
                 '<button class="btn-sm btn-reject"  data-action="reject"  data-doc-id="' + esc(r.id) + '">✗ رفض</button>'
               : '') +
             (r.status === 'confirmed'
-              ? '<button class="btn-sm btn-reject" data-action="cancel" data-doc-id="' + esc(r.id) + '">✗ إلغاء الحجز</button>'
+              ? '<button class="btn-sm btn-cancel" data-action="cancel" data-doc-id="' + esc(r.id) + '">↩ إلغاء الحجز</button>'
               : '') +
             (r.status === 'rejected'
               ? '<button class="btn-sm btn-delete" data-action="delete" data-doc-id="' + esc(r.id) + '">🗑 حذف</button>'
