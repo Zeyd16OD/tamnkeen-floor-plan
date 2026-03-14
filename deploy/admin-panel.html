@@ -755,7 +755,7 @@
       container.innerHTML = list.map(r => {
         const standLabel = r.standId
           ? esc(r.standId) + ' (' + esc(r.type) + ')'
-          : r.tier === 'officiel' ? 'Sponsor Officiel — 180,000 د.ج' : 'Sponsor Standard — 50,000 د.ج';
+          : r.tier === 'officiel' ? 'Sponsor Officiel — 150,000 د.ج' : 'Sponsor Standard — 50,000 د.ج';
         const typeClass  = r.type === 'sponsoring' ? 'type-sponsoring' : ('type-' + r.type);
         const statusLabel = r.status === 'pending' ? '⏳ قيد الانتظار'
           : r.status === 'confirmed' ? '✅ مؤكد' : '❌ مرفوض';
