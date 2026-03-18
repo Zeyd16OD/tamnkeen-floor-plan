@@ -3,26 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1400">
-  <title>Tamkeen Expo 2026 — حجز الأجنحة والرعاية</title>
-  <!--
-    ╔═══════════════════════════════════════════════════════════╗
-    ║   FIREBASE SETUP INSTRUCTIONS                            ║
-    ║                                                          ║
-    ║   1. Go to https://console.firebase.google.com           ║
-    ║   2. Create a new project (e.g. "tamkeen-expo")          ║
-    ║   3. Go to Firestore Database → Create Database           ║
-    ║      - Choose "Start in test mode"                       ║
-    ║      - Pick region: europe-west1 (or closest)            ║
-    ║   4. Go to Project Settings → General → Your apps        ║
-    ║      - Click "Web" (</>)                                 ║
-    ║      - Register app                                      ║
-    ║      - Copy the firebaseConfig object                    ║
-    ║   5. Paste your config values below in the JS section    ║
-    ║      (search for "PASTE YOUR FIREBASE CONFIG HERE")      ║
-    ║                                                          ║
-    ║   Admin password (change below): tamkeen2026             ║
-    ╚═══════════════════════════════════════════════════════════╝
-  -->
+  <title>Tamkeen Expo 2026 — حجز الأجنحة</title>
+  <meta name="description" content="المنصة الرسمية لحجز أجنحة Tamkeen Expo 2026 عبر مخطط تفاعلي حديث وسهل الاستخدام.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://tamkeen-expo-reservation.vercel.app">
+
+  <meta property="og:locale" content="ar_DZ">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Tamkeen Expo 2026">
+  <meta property="og:title" content="Tamkeen Expo 2026 — حجز الأجنحة">
+  <meta property="og:description" content="المنصة الرسمية لحجز أجنحة Tamkeen Expo 2026 عبر مخطط تفاعلي حديث وسهل الاستخدام.">
+  <meta property="og:url" content="https://tamkeen-expo-reservation.vercel.app">
+  <meta property="og:image" content="https://tamkeen-expo-reservation.vercel.app/image.png?v=20260318-1">
+  <meta property="og:image:secure_url" content="https://tamkeen-expo-reservation.vercel.app/image.png?v=20260318-1">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="Tamkeen Expo 2026 - الحجز الرسمي للأجنحة">
+  <meta property="og:updated_time" content="2026-03-18T12:00:00+00:00">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tamkeen Expo 2026 — حجز الأجنحة">
+  <meta name="twitter:description" content="المنصة الرسمية لحجز أجنحة Tamkeen Expo 2026 عبر مخطط تفاعلي حديث وسهل الاستخدام.">
+  <meta name="twitter:image" content="https://tamkeen-expo-reservation.vercel.app/image.png?v=20260318-1">
+  <meta name="twitter:image:alt" content="Tamkeen Expo 2026 - الحجز الرسمي للأجنحة">
+  <!-- Public map and reservation page -->
   <style>
     /* ============================================================
        GLOBAL VARIABLES & RESET
@@ -426,8 +429,13 @@
       background: linear-gradient(160deg, #fecaca 0%, #ef4444 55%, #dc2626 100%) !important;
       border-color: #dc2626 !important;
     }
+    .map-container .stand.status-locked {
+      background: linear-gradient(160deg, #d1d5db 0%, #6b7280 55%, #374151 100%) !important;
+      border-color: #374151 !important;
+    }
     .map-container .stand.status-pending .s-label,
-    .map-container .stand.status-reserved .s-label { color: #fff; }
+    .map-container .stand.status-reserved .s-label,
+    .map-container .stand.status-locked .s-label { color: #fff; }
 
     /* DOOR BREAK + ARCS */
     .map-container .door-break { position: absolute; background: var(--bg-color); z-index: 6; pointer-events: none; }
@@ -688,7 +696,7 @@
 
   <!-- Firebase warning banner -->
   <div id="firebase-warning">
-    ⚠️ Firebase is not configured. Reservations will not work. Please update the firebaseConfig in the source code.
+    ⚠️ Service is temporarily unavailable.
   </div>
 
   <!-- ============================================================
@@ -697,7 +705,7 @@
   <nav class="main-nav">
     <div class="nav-inner">
       <button class="nav-tab active" data-tab="exhibition">خريطة المعرض</button>
-      <button class="nav-tab" data-tab="sponsoring">خطة الرعاية</button>
+      <button class="nav-tab" data-tab="sponsoring" style="display:none">خطة الرعاية</button>
     </div>
   </nav>
 
@@ -972,7 +980,8 @@
             <div class="stand exhibitor" style="left:0px;top:520px;width:80px;height:100px;" data-type="exhibitor" data-id="B7"><span class="s-label">B7</span></div>
 
             <!-- Center Island -->
-            <div class="stand sponsor" style="left:140px;top:160px;width:160px;height:100px;" data-type="sponsor" data-id="S3"><span class="s-label">S3</span></div>
+            <div class="stand exhibitor" style="left:140px;top:160px;width:80px;height:100px;" data-type="exhibitor" data-id="B20"><span class="s-label">B20</span></div>
+            <div class="stand exhibitor" style="left:220px;top:160px;width:80px;height:100px;" data-type="exhibitor" data-id="B21"><span class="s-label">B21</span></div>
             <div class="stand exhibitor" style="left:140px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B8"><span class="s-label">B8</span></div>
             <div class="stand exhibitor" style="left:220px;top:260px;width:80px;height:100px;" data-type="exhibitor" data-id="B9"><span class="s-label">B9</span></div>
             <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-type="exhibitor" data-id="B10"><span class="s-label">B10</span></div>
@@ -1065,15 +1074,15 @@
   (() => {
     'use strict';
 
-    /* ===========================================================
-       CONFIGURATION — PASTE YOUR FIREBASE CONFIG HERE
+     /* ===========================================================
+       SERVER API ENDPOINTS
        =========================================================== */
-    const PROJECT_ID  = 'tamkeen-expo-2026';
-    const NTFY_TOPIC  = 'tamkeen-expo-2026-admin-zeyd'; // Change this to something private if you want
-    const API_KEY    = 'AIzaSyCQ4x1IWLo1L-o8WJ0c0mNGfmX-nN2s-qg';
-    const DB_NAME    = 'default'; // Named database (not the default (default))
-    const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID +
-                       '/databases/' + DB_NAME + '/documents';
+     const API_BASE = '/api/firestore';
+     const API_ENDPOINTS = {
+      createReservation: API_BASE + '?action=createReservation',
+      publicStatuses: API_BASE + '?action=publicStatuses',
+      publicSetting: API_BASE + '?action=publicSetting'
+     };
 
     document.getElementById('firebase-warning').style.display = 'none';
 
@@ -1082,11 +1091,12 @@
        =========================================================== */
     const standStatuses = {};
     const standCompanies = {};
+    const LOCKED_STANDS = {};
     let showCompanyNames = false;
     let allReservations = [];
     let currentReservation = { standId: null, type: null, tier: null };
     const PUBLIC_STATUS_POLL_MS = 120000;
-    const PUBLIC_SETTING_POLL_MS = 600000;
+    const PUBLIC_SETTING_POLL_MS = 120000;
     const QUOTA_BACKOFF_MS = 15 * 60 * 1000;
     let standPollTimer = null;
     let settingPollTimer = null;
@@ -1175,24 +1185,26 @@
     reserveForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      if (currentReservation.standId && LOCKED_STANDS[currentReservation.standId]) {
+        showToast('🔒 هذا الجناح مخصص للرعاة فقط');
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'جاري الإرسال...';
 
       const body = {
-        fields: {
-          standId: { stringValue: currentReservation.standId || '' },
-          type:    { stringValue: currentReservation.type    || '' },
-          tier:    { stringValue: currentReservation.tier    || '' },
-          name:    { stringValue: document.getElementById('f-name').value.trim() },
-          company: { stringValue: document.getElementById('f-company').value.trim() },
-          phone:   { stringValue: document.getElementById('f-phone').value.trim() },
-          email:   { stringValue: document.getElementById('f-email').value.trim() },
-          status:  { stringValue: 'pending' }
-        }
+        standId: currentReservation.standId || '',
+        type: currentReservation.type || '',
+        tier: currentReservation.tier || '',
+        name: document.getElementById('f-name').value.trim(),
+        company: document.getElementById('f-company').value.trim(),
+        phone: document.getElementById('f-phone').value.trim(),
+        email: document.getElementById('f-email').value.trim()
       };
 
       try {
-        const res = await fetch(FS_BASE + '/reservations?key=' + API_KEY, {
+        const res = await fetch(API_ENDPOINTS.createReservation, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -1201,31 +1213,9 @@
           const errBody = await res.json().catch(() => ({}));
           throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
         }
-        // Capture values BEFORE closeModal() resets the form
-        const notifName    = document.getElementById('f-name').value.trim();
-        const notifCompany = document.getElementById('f-company').value.trim();
-        const notifType    = currentReservation.type;
-        const notifStandId = currentReservation.standId;
-        const notifTier    = currentReservation.tier;
-
         closeModal();
         showToast('✅ تم إرسال طلب الحجز بنجاح! سنتواصل معك قريباً');
         pollStandStatuses();
-
-        // Push notification via server-side proxy (avoids browser blockers)
-        const isSponsoring = notifType === 'sponsoring';
-        const standInfo = isSponsoring
-          ? 'Sponsoring (' + (notifTier || '') + ')'
-          : 'Stand ' + (notifStandId || '');
-        const notifBody = standInfo + ' | ' + notifName + (notifCompany ? ' — ' + notifCompany : '');
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'Tamkeen Expo — Nouvelle reservation!',
-            body:  notifBody
-          })
-        }).catch(() => {});
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'إرسال طلب الحجز';
@@ -1240,6 +1230,11 @@
       stand.addEventListener('click', () => {
         const id = stand.dataset.id;
         const status = standStatuses[id];
+
+        if (LOCKED_STANDS[id]) {
+          showToast('🔒 هذا الجناح مخصص للرعاة فقط');
+          return;
+        }
 
         if (status === 'reserved') {
           showToast('🔴 هذا الجناح محجوز بالفعل — Ce stand est déjà réservé');
@@ -1275,7 +1270,7 @@
     async function pollStandStatuses() {
       if (document.hidden) return;
       try {
-        const res = await fetch(FS_BASE + '/reservations?key=' + API_KEY + '&pageSize=300');
+        const res = await fetch(API_ENDPOINTS.publicStatuses, { cache: 'no-store' });
         if (res.status === 429) {
           activateQuotaBackoff();
           return;
@@ -1283,22 +1278,10 @@
         if (!res.ok) return;
         quotaNoticeShown = false;
         const data = await res.json();
-        const docs = data.documents || [];
-
-        // Rebuild statuses
         Object.keys(standStatuses).forEach(k => delete standStatuses[k]);
         Object.keys(standCompanies).forEach(k => delete standCompanies[k]);
-        docs.forEach(doc => {
-          const f = doc.fields || {};
-          const standId = getField(f, 'standId');
-          const status  = getField(f, 'status');
-          if (standId && status !== 'rejected' && status !== 'cancelled') {
-            if (!standStatuses[standId] || status === 'confirmed') {
-              standStatuses[standId] = status === 'confirmed' ? 'reserved' : 'pending';
-              standCompanies[standId] = getField(f, 'company') || '';
-            }
-          }
-        });
+        Object.assign(standStatuses, data.standStatuses || {});
+        Object.assign(standCompanies, data.standCompanies || {});
 
         updateStandColors();
       } catch (e) { /* silent fail — map still usable */ }
@@ -1307,16 +1290,14 @@
     async function fetchPublicSetting() {
       if (document.hidden) return;
       try {
-        const res = await fetch(FS_BASE + '/settings/mapDisplay?key=' + API_KEY);
+        const res = await fetch(API_ENDPOINTS.publicSetting, { cache: 'no-store' });
         if (res.status === 429) {
           activateQuotaBackoff();
           return;
         }
-        if (res.status === 404) return;
         if (!res.ok) return;
         const data = await res.json();
-        const val = data.fields && data.fields.showCompanyNames && data.fields.showCompanyNames.booleanValue;
-        showCompanyNames = !!val;
+        showCompanyNames = !!data.showCompanyNames;
         quotaNoticeShown = false;
         updateStandColors();
       } catch (e) {}
@@ -1360,11 +1341,20 @@
     function updateStandColors() {
       document.querySelectorAll('.stand').forEach(stand => {
         const id = stand.dataset.id;
-        stand.classList.remove('status-pending', 'status-reserved');
+        stand.classList.remove('status-pending', 'status-reserved', 'status-locked');
 
         // Remove old status text
         const old = stand.querySelector('.s-status');
         if (old) old.remove();
+
+        if (LOCKED_STANDS[id]) {
+          stand.classList.add('status-locked');
+          const el = document.createElement('span');
+          el.className = 's-status';
+          el.textContent = 'للرعاة فقط';
+          stand.appendChild(el);
+          return;
+        }
 
         const status = standStatuses[id];
         if (status === 'pending') {
@@ -1412,8 +1402,13 @@
         const id = stand.dataset.id || '';
         const status = standStatuses[id];
         let statusText = '🟢 Available | متاح';
-        if (status === 'pending')  statusText = '🟡 Pending | قيد الانتظار';
-        if (status === 'reserved') statusText = '🔴 Reserved | محجوز';
+        if (LOCKED_STANDS[id]) {
+          statusText = '🔒 Sponsors Only | للرعاة فقط';
+        } else if (status === 'pending') {
+          statusText = '🟡 Pending | قيد الانتظار';
+        } else if (status === 'reserved') {
+          statusText = '🔴 Reserved | محجوز';
+        }
 
         ttHead.textContent = d.head + '  [' + id + ']';
         ttSub.textContent  = d.sub + '  •  ' + statusText;

@@ -52,6 +52,11 @@
       transition: background 0.2s;
     }
     .top-bar a:hover { background: rgba(255,255,255,0.22); }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .company-public-toggle {
       background: rgba(255,255,255,0.12); color: #fff;
       border: 1.5px solid rgba(255,255,255,0.3);
@@ -413,8 +418,11 @@
 
   <div class="top-bar">
     <h1>📊 لوحة تحكم المعرض — Tamkeen Expo 2026</h1>
-    <button id="publicCompanyToggle" class="company-public-toggle">⏳ جاري التحميل...</button>
-    <a href="/">← الموقع الرئيسي</a>
+    <div class="top-actions">
+      <button id="adminAuthBtn" class="company-public-toggle">🔐 رمز دخول المشرف</button>
+      <button id="publicCompanyToggle" class="company-public-toggle">👁 إظهار أسماء الشركات للعموم</button>
+      <a href="/">← الموقع الرئيسي</a>
+    </div>
   </div>
 
   <div id="loadingMsg">⏳ جاري تحميل البيانات...</div>
@@ -441,7 +449,7 @@
     <div id="mapSection" style="display:none;padding:20px 28px;direction:ltr;">
       <div style="display:flex;align-items:center;justify-content:space-between;max-width:980px;margin:0 auto 16px;direction:rtl;">
         <strong style="font-size:1em;color:#1e293b;">🗺️ خريطة المعرض — Vue plan des stands</strong>
-        <button id="adminCompanyToggleBtn" class="company-toggle-btn">👁 أسماء الشركات</button>
+        <button id="adminCompanyToggleBtn" class="company-toggle-btn">👁 أسماء الشركات (داخل لوحة التحكم)</button>
       </div>
       <div class="map-container">
         <div class="expo-wrapper">
@@ -497,7 +505,8 @@
             <div class="stand exhibitor" style="left:0;top:200px;width:80px;height:100px;" data-id="B5"><span class="s-label">B5</span></div>
             <div class="stand exhibitor" style="left:0;top:420px;width:80px;height:100px;" data-id="B6"><span class="s-label">B6</span></div>
             <div class="stand exhibitor" style="left:0;top:520px;width:80px;height:100px;" data-id="B7"><span class="s-label">B7</span></div>
-            <div class="stand sponsor" style="left:140px;top:160px;width:160px;height:100px;" data-id="S3"><span class="s-label">S3</span></div>
+            <div class="stand exhibitor" style="left:140px;top:160px;width:80px;height:100px;" data-id="B20"><span class="s-label">B20</span></div>
+            <div class="stand exhibitor" style="left:220px;top:160px;width:80px;height:100px;" data-id="B21"><span class="s-label">B21</span></div>
             <div class="stand exhibitor" style="left:140px;top:260px;width:80px;height:100px;" data-id="B8"><span class="s-label">B8</span></div>
             <div class="stand exhibitor" style="left:220px;top:260px;width:80px;height:100px;" data-id="B9"><span class="s-label">B9</span></div>
             <div class="stand exhibitor" style="left:140px;top:360px;width:80px;height:100px;" data-id="B10"><span class="s-label">B10</span></div>
@@ -535,9 +544,14 @@
   (() => {
     'use strict';
 
-    const PROJECT_ID = 'tamkeen-expo-2026';
-    const API_KEY    = 'AIzaSyCQ4x1IWLo1L-o8WJ0c0mNGfmX-nN2s-qg';
-    const BASE_URL   = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID + '/databases/default/documents';
+    const API_BASE = '/api/firestore';
+    const API_ENDPOINTS = {
+      adminList: API_BASE + '?action=adminList',
+      adminUpdateStatus: API_BASE + '?action=adminUpdateStatus',
+      publicSetting: API_BASE + '?action=publicSetting',
+      adminSetPublicSetting: API_BASE + '?action=adminSetPublicSetting'
+    };
+    const ADMIN_TOKEN_STORAGE_KEY = 'tamkeen_admin_token';
 
     let allReservations = [];
     let currentTab    = 'stands';
@@ -563,12 +577,6 @@
       setTimeout(() => t.classList.remove('show'), 3500);
     }
 
-    function getField(fields, key) {
-      const f = fields && fields[key];
-      if (!f) return null;
-      return f.stringValue ?? f.integerValue ?? f.booleanValue ?? (f.nullValue !== undefined ? null : null);
-    }
-
     function fmtTime(ts) {
       if (!ts) return '';
       try {
@@ -577,35 +585,65 @@
       } catch { return ''; }
     }
 
+    function getStoredAdminToken() {
+      try {
+        return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || '';
+      } catch {
+        return '';
+      }
+    }
+
+    function setStoredAdminToken(token) {
+      try {
+        if (token) {
+          localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+        } else {
+          localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+        }
+      } catch {}
+    }
+
+    function ensureAdminToken(forcePrompt = false) {
+      let token = getStoredAdminToken();
+      if (!token || forcePrompt) {
+        const entered = window.prompt('أدخل رمز دخول المشرف', token || '');
+        if (entered === null) return '';
+        token = entered.trim();
+        if (!token) return '';
+        setStoredAdminToken(token);
+      }
+      return token;
+    }
+
+    async function adminRequest(url, options = {}) {
+      const token = ensureAdminToken();
+      if (!token) throw new Error('🔐 مطلوب رمز دخول المشرف');
+
+      const headers = Object.assign({}, options.headers || {}, {
+        'x-admin-token': token
+      });
+
+      const res = await fetch(url, Object.assign({}, options, {
+        headers,
+        cache: 'no-store'
+      }));
+
+      if (res.status === 401) {
+        setStoredAdminToken('');
+        throw new Error('🔐 رمز المشرف غير صحيح. اضغط زر "رمز دخول المشرف" لإعادة الإدخال');
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      return data;
+    }
+
     // ── Load data via REST (no SDK) ───────────────────────────────
     async function loadData(forceWhenHidden = false) {
       if (document.hidden && !forceWhenHidden) return;
       try {
-        const res = await fetch(BASE_URL + '/reservations?key=' + API_KEY + '&pageSize=300');
-        if (res.status === 429) {
-          activateAdminQuotaBackoff();
-          return;
-        }
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const docs = data.documents || [];
-
-        allReservations = docs.map(doc => {
-          const id = doc.name.split('/').pop();
-          const f  = doc.fields || {};
-          return {
-            id,
-            standId:   getField(f, 'standId'),
-            type:      getField(f, 'type'),
-            tier:      getField(f, 'tier'),
-            name:      getField(f, 'name'),
-            company:   getField(f, 'company'),
-            phone:     getField(f, 'phone'),
-            email:     getField(f, 'email'),
-            status:    getField(f, 'status') || 'pending',
-            timestamp: getField(f, 'timestamp') || (doc.createTime)
-          };
-        }).filter(r => r.status !== 'cancelled');
+        const data = await adminRequest(API_ENDPOINTS.adminList);
+        allReservations = (data.reservations || []);
 
         // Sort newest first
         allReservations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -663,18 +701,12 @@
       if (action === 'delete' || action === 'cancel') {
         const isCancel = action === 'cancel';
         if (!confirm(isCancel ? 'هل أنت متأكد من إلغاء هذا الحجز المؤكد؟' : 'هل أنت متأكد من حذف هذا الحجز نهائياً؟')) { btn.disabled = false; return; }
-        const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
-                    '&updateMask.fieldPaths=status';
         try {
-          const res = await fetch(url, {
+          await adminRequest(API_ENDPOINTS.adminUpdateStatus, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fields: { status: { stringValue: 'cancelled' } } })
+            body: JSON.stringify({ docId, status: 'cancelled' })
           });
-          if (!res.ok) {
-            const errBody = await res.json().catch(() => ({}));
-            throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
-          }
           showToast(isCancel ? '↩️ تم إلغاء الحجز وأصبح الجناح متاحاً' : '🗑️ تم حذف الحجز');
           allReservations = allReservations.filter(r => r.id !== docId);
           renderStats();
@@ -691,20 +723,13 @@
       if (action === 'confirm') newStatus = 'confirmed';
       else if (action === 'reject') newStatus = 'rejected';
       else return;
-      const url = BASE_URL + '/reservations/' + docId + '?key=' + API_KEY +
-                  '&updateMask.fieldPaths=status';
 
       try {
-        const res = await fetch(url, {
+        await adminRequest(API_ENDPOINTS.adminUpdateStatus, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { status: { stringValue: newStatus } } })
+          body: JSON.stringify({ docId, status: newStatus })
         });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          throw new Error((errBody.error && errBody.error.message) || 'HTTP ' + res.status);
-        }
 
         showToast(action === 'confirm' ? '✅ تم تأكيد الحجز' : '❌ تم رفض الطلب');
         // Update local copy
@@ -796,17 +821,12 @@
     // ── Auto-refresh every 30s ────────────────────────────────────
     let adminShowCompany = false;
 
-    const SETTINGS_URL = BASE_URL + '/settings/mapDisplay?key=' + API_KEY;
-
     async function loadPublicSetting() {
       try {
-        const res = await fetch(SETTINGS_URL);
-        if (res.status === 429) return;
-        if (res.status === 404) return;
+        const res = await fetch(API_ENDPOINTS.publicSetting, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        const val = data.fields && data.fields.showCompanyNames && data.fields.showCompanyNames.booleanValue;
-        updatePublicToggleBtn(!!val);
+        updatePublicToggleBtn(!!data.showCompanyNames);
       } catch (e) {}
     }
 
@@ -816,17 +836,26 @@
       btn.classList.toggle('on', isOn);
     }
 
+    document.getElementById('adminAuthBtn').addEventListener('click', () => {
+      const token = ensureAdminToken(true);
+      if (token) {
+        showToast('✅ تم تحديث رمز دخول المشرف');
+        loadData(true);
+      } else {
+        showToast('⚠️ لم يتم إدخال رمز دخول');
+      }
+    });
+
     document.getElementById('publicCompanyToggle').addEventListener('click', async function() {
       const isCurrentlyOn = this.classList.contains('on');
       const newVal = !isCurrentlyOn;
       this.disabled = true;
       try {
-        const res = await fetch(SETTINGS_URL + '&updateMask.fieldPaths=showCompanyNames', {
+        await adminRequest(API_ENDPOINTS.adminSetPublicSetting, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { showCompanyNames: { booleanValue: newVal } } })
+          body: JSON.stringify({ showCompanyNames: newVal })
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
         updatePublicToggleBtn(newVal);
         showToast(newVal ? '👁 تم إظهار أسماء الشركات في الموقع العام' : '🙈 تم إخفاء أسماء الشركات من الموقع العام');
       } catch (err) {
@@ -834,6 +863,9 @@
       }
       this.disabled = false;
     });
+
+    // Ensure the public toggle never stays in an ambiguous loading state.
+    updatePublicToggleBtn(false);
 
     function startAdminPolling() {
       if (adminPollTimer) clearInterval(adminPollTimer);
@@ -858,6 +890,7 @@
       }, ADMIN_BACKOFF_MS);
     }
 
+    ensureAdminToken(false);
     loadData(true);
     loadPublicSetting();
     startAdminPolling();
@@ -904,7 +937,7 @@
     document.getElementById('adminCompanyToggleBtn').addEventListener('click', function() {
       adminShowCompany = !adminShowCompany;
       this.classList.toggle('active', adminShowCompany);
-      this.textContent = adminShowCompany ? '🙈 إخفاء الأسماء' : '👁 أسماء الشركات';
+      this.textContent = adminShowCompany ? '🙈 إخفاء الأسماء (داخل لوحة التحكم)' : '👁 أسماء الشركات (داخل لوحة التحكم)';
       updateAdminMapColors();
     });
 
